@@ -99,7 +99,7 @@ with st.sidebar:
 
     st.markdown("---")
     # Título y nota actualizados
-    st.header("3. Cargas (kN/m horizontal)")
+    st.header("3. Cargas Gravitacionales (kN/m horizontal)")
     st.caption("Ingresa las cargas por metro de proyección horizontal. La app realiza automáticamente la estática sobre la longitud inclinada.")
     
     # Cargas divididas por tramo
