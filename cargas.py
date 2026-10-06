@@ -1,17 +1,18 @@
 import numpy as np
 
-def descomponer_carga_gravedad(W_vertical, c, s, es_proyeccion_horizontal=True):
+def descomponer_carga_gravedad(W_vertical, c, s, es_proyeccion_horizontal=False):
     """
-    Toma una carga gravitacional global (W_vertical en kN/m horizontal, positiva hacia abajo)
+    Toma una carga gravitacional global (W_vertical en kN/m, positiva hacia abajo)
     y la descompone en los ejes locales del elemento inclinado.
+    
+    Se eliminó la reducción por proyección horizontal para que W_vertical actúe 
+    por metro de longitud inclinada, coincidiendo con la dirección "Gravity" de SAP2000.
     """
-    # Si la carga se ingresó por metro de proyección horizontal, la ajustamos a la longitud real
-    if es_proyeccion_horizontal and c != 0:
-        W_real = W_vertical * abs(c)
-    else:
-        W_real = W_vertical
+    # W_vertical se asume repartido sobre la longitud real del elemento
+    W_real = W_vertical
 
     # La gravedad actúa en dirección -Y global.
+    # Proyección en el eje local X (Axial) y local Y (Transversal)
     w_x = -W_real * s
     w_y = -W_real * c
     
