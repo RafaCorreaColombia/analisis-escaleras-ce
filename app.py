@@ -1,5 +1,8 @@
 import streamlit as st
 import numpy as np
+import motor_rigidez as mr
+import cargas as cr
+import visualizador as vi
 
 # --- CONFIGURACIÓN DE LA PÁGINA ---
 st.set_page_config(page_title="Análisis de Escaleras | Criterio Estructural", layout="wide")
@@ -11,10 +14,10 @@ st.markdown("""
         --naranja-estructural: #E67E22;
         --gris-claro: #F4F5F7;
     }
-    .titulo-principal { color: var(--azul-profundo); font-weight: bold; border-bottom: 3px solid var(--naranja-estructural); padding-bottom: 10px; }
-    .stButton>button { background-color: var(--azul-profundo); color: white; border-radius: 5px; width: 100%; font-weight: bold; }
-    .stButton>button:hover { background-color: var(--naranja-estructural); color: white; border: none; }
-    .caja-resultados { background-color: #f8fafc; padding: 15px; border-left: 5px solid var(--naranja-estructural); border-radius: 5px; margin-bottom: 15px;}
+    .titulo-principal { color: #1A2530; font-weight: bold; border-bottom: 3px solid #E67E22; padding-bottom: 10px; }
+    .stButton>button { background-color: #1A2530; color: white; border-radius: 5px; width: 100%; font-weight: bold; }
+    .stButton>button:hover { background-color: #E67E22; color: white; border: none; }
+    .caja-resultados { background-color: #f8fafc; padding: 15px; border-left: 5px solid #E67E22; border-radius: 5px; margin-bottom: 15px;}
     </style>
 """, unsafe_allow_html=True)
 
@@ -30,6 +33,10 @@ with st.sidebar:
     st.header("1. Geometría y Apoyos")
     modo_geo = st.radio("Modo de ingreso:", ["Rápido (Plantillas)", "Avanzado (Coordenadas)"])
     
+    # Variables globales de coordenadas
+    x1, y1 = 0.0, 0.0
+    x2, y2, x3, y3 = 0.0, 0.0, 0.0, 0.0
+    
     if modo_geo == "Rápido (Plantillas)":
         plantilla = st.selectbox("Configuración:", [
             "Descanso + Tramo inclinado", 
@@ -43,6 +50,17 @@ with st.sidebar:
         with col2:
             L2 = st.number_input("L Tramo 2 (m)", value=3.00, step=0.1)
             H2 = st.number_input("Desnivel 2 (m)", value=1.60, step=0.1)
+            
+        # Traducción de plantilla a coordenadas
+        if plantilla == "Descanso + Tramo inclinado":
+            x2, y2 = L1, 0.0
+            x3, y3 = L1 + L2, H2
+        elif plantilla == "Tramo inclinado + Descanso":
+            x2, y2 = L1, H1
+            x3, y3 = L1 + L2, H1
+        else:
+            x2, y2 = L1, H1
+            x3, y3 = L1 + L2, H1 + H2
     else:
         st.caption("Coordenadas N1 (0,0) por defecto")
         col1, col2 = st.columns(2)
@@ -63,7 +81,6 @@ with st.sidebar:
     h = st.number_input("Espesor h (m)", value=0.15, step=0.01)
     fc = st.number_input("f'c (MPa)", value=21.0, step=1.0)
     
-    # Modificador didáctico de Inercia
     modificar_I = st.checkbox("⚙️ Modificar Inercia (I) manualmente")
     I_calc = (b * h**3) / 12
     if modificar_I:
@@ -74,7 +91,7 @@ with st.sidebar:
 
     st.markdown("---")
     st.header("3. Cargas Verticales")
-    D = st.number_input("Carga Muerta D (kN/m)", value=6.6, step=0.1, help="Suma de peso propio, peldaños, acabados, etc.")
+    D = st.number_input("Carga Muerta D (kN/m)", value=6.6, step=0.1, help="Peso propio, peldaños, acabados, etc.")
     L_carga = st.number_input("Carga Viva L (kN/m)", value=3.0, step=0.1)
     
     st.markdown("**Combinación de Diseño**")
@@ -96,42 +113,166 @@ with st.sidebar:
 # ==========================================
 if not btn_analizar:
     st.info("👈 Define la geometría, sección y cargas en el panel izquierdo. Luego haz clic en 'Analizar y Diseñar'.")
-    # Placeholder para gráfico de geometría inicial
-else:
-    st.subheader("🟦 Nivel 1: Modelo Idealizado")
-    st.write("*(Gráfico Plotly: Nodos, conectividad y apoyos)*")
     
-    st.markdown("---")
+    # Dibujar geometría vacía previa
+    nodos_ini = [[x1, y1], [x2, y2], [x3, y3]]
+    elems_ini = [(0, 1), (1, 2)]
+    fig_ini = vi.graficar_modelo_basico(nodos_ini, elems_ini, "Geometría Definida")
+    st.plotly_chart(fig_ini, use_container_width=True)
+
+else:
+    # ---------------------------------------------------------
+    # MOTOR DE CÁLCULO
+    # ---------------------------------------------------------
+    E = 4700 * np.sqrt(fc) * 1000 # kN/m2
+    A = b * h
+    I = I_usada
+    
+    nodos = [[x1, y1], [x2, y2], [x3, y3]]
+    elementos = [(0, 1), (1, 2)]
+    gdl_elementos = [[0,1,2, 3,4,5], [3,4,5, 6,7,8]]
+    
+    # Elemento 1
+    L_e1, c1, s1 = mr.calcular_geometria_elemento(x1, y1, x2, y2)
+    k1_loc = mr.matriz_rigidez_local(E, A, I, L_e1)
+    T1 = mr.matriz_transformacion(c1, s1)
+    k1_glob = mr.matriz_rigidez_global_elemento(k1_loc, T1)
+    
+    wx1, wy1 = cr.descomponer_carga_gravedad(Wu, c1, s1)
+    Ffem1 = cr.calcular_FEM_local(wx1, wy1, L_e1)
+    Feq1 = cr.vector_cargas_equivalentes_global(Ffem1, T1)
+    
+    # Elemento 2
+    L_e2, c2, s2 = mr.calcular_geometria_elemento(x2, y2, x3, y3)
+    k2_loc = mr.matriz_rigidez_local(E, A, I, L_e2)
+    T2 = mr.matriz_transformacion(c2, s2)
+    k2_glob = mr.matriz_rigidez_global_elemento(k2_loc, T2)
+    
+    wx2, wy2 = cr.descomponer_carga_gravedad(Wu, c2, s2)
+    Ffem2 = cr.calcular_FEM_local(wx2, wy2, L_e2)
+    Feq2 = cr.vector_cargas_equivalentes_global(Ffem2, T2)
+    
+    # Ensamblaje
+    K_sis = mr.ensamblar_K_sistema([k1_glob, k2_glob], gdl_elementos, 3)
+    
+    F_sis = np.zeros(9)
+    F_sis[0:6] += Feq1
+    F_sis[3:9] += Feq2
+    
+    # El nodo 2 (descanso/quiebre) es libre por defecto en escaleras
+    restricciones = mr.definir_gdl_restringidos([apoyo_n1, "Libre", apoyo_n3])
+    
+    # Solución
+    Desp, Reacciones = mr.resolver_sistema(K_sis, F_sis, restricciones)
+    
+    # Recuperación de Fuerzas
+    Fext1 = cr.fuerzas_finales_extremos(k1_loc, T1, Desp[0:6], Ffem1)
+    Fext2 = cr.fuerzas_finales_extremos(k2_loc, T2, Desp[3:9], Ffem2)
+    
+    x1_arr, N1, V1, M1 = cr.generar_datos_diagramas(Fext1, wx1, wy1, L_e1)
+    x2_arr, N2, V2, M2 = cr.generar_datos_diagramas(Fext2, wx2, wy2, L_e2)
+    
+    # ---------------------------------------------------------
+    # RENDERIZADO DE INTERFAZ
+    # ---------------------------------------------------------
     st.subheader("🟧 Nivel 2: Resultados del Análisis")
     tab_diag, tab_def, tab_reac = st.tabs(["📊 Diagramas (M, V, N)", "📉 Deformada", "📐 Reacciones"])
     
     with tab_diag:
-        st.write("*(Gráficos Plotly: Momento, Cortante y Axial superpuestos en la geometría)*")
-    with tab_def:
-        st.write("*(Gráfico Plotly: Línea original vs Deformada amplificada)*")
-        st.markdown(f'<div class="caja-resultados"><b>Desplazamiento máximo (\(\delta_{{max}}\)):</b> 8.4 mm (Elemento 2)</div>', unsafe_allow_html=True)
-    with tab_reac:
-        st.write("*(Tabla y esquema visual de reacciones Rx, Ry, Mz en N1 y N3)*")
+        # Momento
+        fig_M = vi.graficar_diagrama(nodos, elementos, [x1_arr, x2_arr], [M1, M2], 
+                                     "Diagrama de Momento (kN·m)", "#E67E22", "rgba(230, 126, 34, 0.2)", invertir_signo=True)
+        st.plotly_chart(fig_M, use_container_width=True)
+        
+        # Cortante
+        fig_V = vi.graficar_diagrama(nodos, elementos, [x1_arr, x2_arr], [V1, V2], 
+                                     "Diagrama de Cortante (kN)", "#1A2530", "rgba(26, 37, 48, 0.2)")
+        st.plotly_chart(fig_V, use_container_width=True)
+        
+        # Axial
+        fig_N = vi.graficar_diagrama(nodos, elementos, [x1_arr, x2_arr], [N1, N2], 
+                                     "Diagrama de Fuerza Axial (kN)", "#64748b", "rgba(100, 116, 139, 0.2)")
+        st.plotly_chart(fig_N, use_container_width=True)
 
+    with tab_def:
+        # Calcular deflexión máxima (traslacional)
+        desp_traslacionales = [np.hypot(Desp[i], Desp[i+1]) for i in range(0, 9, 3)]
+        max_delta_mm = max(desp_traslacionales) * 1000
+        
+        fig_def = vi.graficar_deformada(nodos, elementos, Desp, factor_amplificacion=50)
+        st.plotly_chart(fig_def, use_container_width=True)
+        st.markdown(f'<div class="caja-resultados"><b>Desplazamiento máximo (\(\delta_{{max}}\)):</b> {max_delta_mm:.2f} mm</div>', unsafe_allow_html=True)
+        
+    with tab_reac:
+        colR1, colR2 = st.columns(2)
+        with colR1:
+            st.write("**Reacciones Nodo 1**")
+            st.write(f"Rx: {Reacciones[0]:.2f} kN")
+            st.write(f"Ry: {Reacciones[1]:.2f} kN")
+            st.write(f"Mz: {Reacciones[2]:.2f} kN·m")
+        with colR2:
+            st.write("**Reacciones Nodo 3**")
+            st.write(f"Rx: {Reacciones[6]:.2f} kN")
+            st.write(f"Ry: {Reacciones[7]:.2f} kN")
+            st.write(f"Mz: {Reacciones[8]:.2f} kN·m")
+
+    # ---------------------------------------------------------
+    # MÓDULO DE DISEÑO CRÍTICO (NSR-10 / ACI 318)
+    # ---------------------------------------------------------
     st.markdown("---")
     st.subheader("🟦 Nivel 3: Verificación de Diseño Crítico")
-    st.write("Comprobación rápida de los puntos de máxima demanda. *Asume acero fy = 420 MPa y recubrimiento estándar.*")
+    st.write("Comprobación de la máxima demanda. *Asume acero fy = 420 MPa y recubrimiento al centroide de 4 cm.*")
+    
+    # Encontrar máximos absolutos
+    Mu_max = max(np.max(np.abs(M1)), np.max(np.abs(M2)))
+    Vu_max = max(np.max(np.abs(V1)), np.max(np.abs(V2)))
+    
+    # Parámetros de Diseño
+    d_m = h - 0.04 # Peralte efectivo en metros
+    fy = 420 # MPa
+    phi_f = 0.90
+    phi_v = 0.75
+    
+    # Cortante del Concreto (NSR-10)
+    Vc = 0.17 * np.sqrt(fc) * b * d_m * 1000 # en kN
+    phi_Vc = phi_v * Vc
+    
+    # Acero de Flexión (Ecuación Cuadrática Exacta de rho)
+    # Mu = phi * rho * b * d^2 * fy * (1 - 0.59 * rho * fy / fc)
+    coef_A = 0.59 * fy / fc
+    coef_B = -1.0
+    coef_C = (Mu_max) / (phi_f * b * d_m**2 * fy * 1000) # Mu en kNm convertido
+    
+    # Resolver ecuación cuadrática para rho
+    discriminante = coef_B**2 - 4 * coef_A * coef_C
+    if discriminante < 0:
+        texto_As = "¡Sección Insuficiente! Aumente el espesor (h)."
+        As_req_cm2 = 0
+    else:
+        rho_req = (-coef_B - np.sqrt(discriminante)) / (2 * coef_A)
+        As_req_cm2 = rho_req * b * d_m * 10000 # cm2
+        texto_As = f"{As_req_cm2:.2f} cm²"
+        
+    As_min_cm2 = 0.0018 * b * h * 10000
     
     col_flex, col_cort = st.columns(2)
     with col_flex:
         st.markdown('<div class="caja-resultados">', unsafe_allow_html=True)
         st.markdown("#### 📏 Diseño a Flexión")
-        st.write("**Demanda Crítica:** $M_u^+ = 32.5$ kN·m (Elemento 2)")
-        st.write("**$A_s$ requerido:** 6.1 cm²")
-        st.write("**$A_s$ mínimo (NSR-10):** 2.7 cm²")
+        st.write(f"**Demanda Crítica $|M_u|$:** {Mu_max:.2f} kN·m")
+        st.write(f"**$A_s$ requerido:** {texto_As}")
+        st.write(f"**$A_s$ mínimo (NSR-10):** {As_min_cm2:.2f} cm²")
         st.markdown('</div>', unsafe_allow_html=True)
         
     with col_cort:
         st.markdown('<div class="caja-resultados">', unsafe_allow_html=True)
         st.markdown("#### ✂️ Diseño a Cortante")
-        st.write("**Demanda Crítica:** $V_u = 28.4$ kN (Nodo 2)")
-        st.write("**Capacidad del concreto $\phi V_c$:** 85.2 kN")
-        st.write("✅ **Chequeo:** $V_u < \phi V_c$ (No requiere refuerzo transversal)")
+        st.write(f"**Demanda Crítica $|V_u|$:** {Vu_max:.2f} kN")
+        st.write(f"**Capacidad del concreto $\phi V_c$:** {phi_Vc:.2f} kN")
+        if Vu_max <= phi_Vc:
+            st.write("✅ **Chequeo:** $V_u \le \phi V_c$ (No requiere refuerzo transversal)")
+        else:
+            st.write("❌ **Chequeo:** $V_u > \phi V_c$ (Requiere aumentar espesor o colocar estribos)")
         st.markdown('</div>', unsafe_allow_html=True)
 
     # ==========================================
@@ -139,8 +280,8 @@ else:
     # ==========================================
     st.markdown("---")
     with st.expander("🔧 Información Técnica del Modelo (Motor Matricial)"):
-        st.caption("La herramienta utiliza un modelo matricial de elementos de pórtico 2D (Euler-Bernoulli: Axial + Flexión). Esta información se muestra únicamente como referencia para validación técnica.")
-        st.write("**Matriz Global Ensamblada [K]**")
-        st.write("*(Aquí volcaremos el output de NumPy)*")
-        st.write("**Vector de Cargas Nodal Equivalente {F}**")
-        st.write("*(Transformación de cargas distribuidas a FEM)*")
+        st.caption("Euler-Bernoulli: Matriz ensamblada de 9x9 (3 Nodos x 3 GDL). F_eq son las cargas distribuidas proyectadas como momentos/cortantes de empotramiento perfecto.")
+        st.write("**Matriz de Rigidez del Sistema [K]:**")
+        st.dataframe(K_sis)
+        st.write("**Vector de Cargas [F]:**")
+        st.dataframe(F_sis)
