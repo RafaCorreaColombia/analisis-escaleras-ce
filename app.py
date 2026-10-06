@@ -43,13 +43,20 @@ with st.sidebar:
             "Tramo inclinado + Descanso", 
             "Dos tramos inclinados"
         ])
+        
+        # Lógica de apagado UI para desniveles según plantilla
+        es_descanso_1 = (plantilla == "Descanso + Tramo inclinado")
+        es_descanso_2 = (plantilla == "Tramo inclinado + Descanso")
+        
         col1, col2 = st.columns(2)
         with col1:
-            L1 = st.number_input("L Tramo 1 (m)", value=1.20, step=0.1)
-            H1 = st.number_input("Desnivel 1 (m)", value=0.00, step=0.1)
+            L1 = st.number_input("L horiz. Tramo 1 (m)", value=1.20, step=0.1)
+            H1 = st.number_input("Desnivel 1 (m)", value=0.00, step=0.1, disabled=es_descanso_1)
+            if es_descanso_1: H1 = 0.0 # Fuerza a 0 internamente aunque esté deshabilitado
         with col2:
-            L2 = st.number_input("L Tramo 2 (m)", value=3.00, step=0.1)
-            H2 = st.number_input("Desnivel 2 (m)", value=1.60, step=0.1)
+            L2 = st.number_input("L horiz. Tramo 2 (m)", value=3.00, step=0.1)
+            H2 = st.number_input("Desnivel 2 (m)", value=1.60, step=0.1, disabled=es_descanso_2)
+            if es_descanso_2: H2 = 0.0
             
         # Traducción de plantilla a coordenadas
         if plantilla == "Descanso + Tramo inclinado":
@@ -72,8 +79,9 @@ with st.sidebar:
             y3 = st.number_input("Y3 (m)", value=1.60, step=0.1)
 
     st.markdown("**Condiciones de Apoyo**")
-    apoyo_n1 = st.selectbox("Apoyo N1 (Inicial)", ["Articulado", "Empotrado", "Libre"])
-    apoyo_n3 = st.selectbox("Apoyo N3 (Final)", ["Articulado", "Empotrado", "Libre"])
+    # Agregado: Rodillo
+    apoyo_n1 = st.selectbox("Apoyo N1 (Inicial)", ["Articulado", "Empotrado", "Rodillo", "Libre"], index=0)
+    apoyo_n3 = st.selectbox("Apoyo N3 (Final)", ["Articulado", "Empotrado", "Rodillo", "Libre"], index=0)
     
     st.markdown("---")
     st.header("2. Sección y Material")
@@ -90,9 +98,22 @@ with st.sidebar:
         st.info(f"Inercia calculada: {I_calc:.6f} m⁴")
 
     st.markdown("---")
-    st.header("3. Cargas Verticales")
-    D = st.number_input("Carga Muerta D (kN/m)", value=6.6, step=0.1, help="Peso propio, peldaños, acabados, etc.")
-    L_carga = st.number_input("Carga Viva L (kN/m)", value=3.0, step=0.1)
+    # Título y nota actualizados
+    st.header("3. Cargas (kN/m horizontal)")
+    st.caption("Ingresa las cargas por metro de proyección horizontal. La app realiza automáticamente la estática sobre la longitud inclinada.")
+    
+    # Cargas divididas por tramo
+    colA, colB = st.columns(2)
+    with colA: st.markdown("**Tramo 1**")
+    with colB: st.markdown("**Tramo 2**")
+    
+    colC, colD = st.columns(2)
+    with colC: D1 = st.number_input("C. Muerta D1", value=6.6, step=0.1)
+    with colD: D2 = st.number_input("C. Muerta D2", value=6.6, step=0.1)
+    
+    colE, colF = st.columns(2)
+    with colE: L1_carga = st.number_input("C. Viva L1", value=3.0, step=0.1)
+    with colF: L2_carga = st.number_input("C. Viva L2", value=3.0, step=0.1)
     
     st.markdown("**Combinación de Diseño**")
     col3, col4 = st.columns(2)
@@ -101,8 +122,9 @@ with st.sidebar:
     with col4:
         f_L = st.number_input("Factor L", value=1.60, step=0.05)
         
-    Wu = (f_D * D) + (f_L * L_carga)
-    st.success(f"**Wu = {Wu:.2f} kN/m**")
+    Wu1 = (f_D * D1) + (f_L * L1_carga)
+    Wu2 = (f_D * D2) + (f_L * L2_carga)
+    st.success(f"**Wu1 = {Wu1:.2f} kN/m | Wu2 = {Wu2:.2f} kN/m**")
 
     st.markdown("---")
     btn_analizar = st.button("▶ ANALIZAR Y DISEÑAR")
@@ -114,10 +136,10 @@ with st.sidebar:
 if not btn_analizar:
     st.info("👈 Define la geometría, sección y cargas en el panel izquierdo. Luego haz clic en 'Analizar y Diseñar'.")
     
-    # Dibujar geometría vacía previa
+    # Dibujar geometría vacía previa con los apoyos seleccionados
     nodos_ini = [[x1, y1], [x2, y2], [x3, y3]]
     elems_ini = [(0, 1), (1, 2)]
-    fig_ini = vi.graficar_modelo_basico(nodos_ini, elems_ini, "Geometría Definida")
+    fig_ini = vi.graficar_modelo_basico(nodos_ini, elems_ini, "Geometría Definida", apoyos=[apoyo_n1, "Libre", apoyo_n3])
     st.plotly_chart(fig_ini, use_container_width=True)
 
 else:
@@ -132,23 +154,23 @@ else:
     elementos = [(0, 1), (1, 2)]
     gdl_elementos = [[0,1,2, 3,4,5], [3,4,5, 6,7,8]]
     
-    # Elemento 1
+    # Elemento 1 (Usa Wu1)
     L_e1, c1, s1 = mr.calcular_geometria_elemento(x1, y1, x2, y2)
     k1_loc = mr.matriz_rigidez_local(E, A, I, L_e1)
     T1 = mr.matriz_transformacion(c1, s1)
     k1_glob = mr.matriz_rigidez_global_elemento(k1_loc, T1)
     
-    wx1, wy1 = cr.descomponer_carga_gravedad(Wu, c1, s1)
+    wx1, wy1 = cr.descomponer_carga_gravedad(Wu1, c1, s1, es_proyeccion_horizontal=True)
     Ffem1 = cr.calcular_FEM_local(wx1, wy1, L_e1)
     Feq1 = cr.vector_cargas_equivalentes_global(Ffem1, T1)
     
-    # Elemento 2
+    # Elemento 2 (Usa Wu2)
     L_e2, c2, s2 = mr.calcular_geometria_elemento(x2, y2, x3, y3)
     k2_loc = mr.matriz_rigidez_local(E, A, I, L_e2)
     T2 = mr.matriz_transformacion(c2, s2)
     k2_glob = mr.matriz_rigidez_global_elemento(k2_loc, T2)
     
-    wx2, wy2 = cr.descomponer_carga_gravedad(Wu, c2, s2)
+    wx2, wy2 = cr.descomponer_carga_gravedad(Wu2, c2, s2, es_proyeccion_horizontal=True)
     Ffem2 = cr.calcular_FEM_local(wx2, wy2, L_e2)
     Feq2 = cr.vector_cargas_equivalentes_global(Ffem2, T2)
     
@@ -162,8 +184,12 @@ else:
     # El nodo 2 (descanso/quiebre) es libre por defecto en escaleras
     restricciones = mr.definir_gdl_restringidos([apoyo_n1, "Libre", apoyo_n3])
     
-    # Solución
-    Desp, Reacciones = mr.resolver_sistema(K_sis, F_sis, restricciones)
+    # Solución (con captura de error para estructuras inestables)
+    try:
+        Desp, Reacciones = mr.resolver_sistema(K_sis, F_sis, restricciones)
+    except np.linalg.LinAlgError:
+        st.error("🚨 **Error de Estática:** La estructura es inestable (matriz singular). Por ejemplo, si usas dos rodillos horizontales, la escalera no tiene restricción para no deslizarse. Cambia al menos un apoyo a 'Articulado' o 'Empotrado'.")
+        st.stop()
     
     # Recuperación de Fuerzas
     Fext1 = cr.fuerzas_finales_extremos(k1_loc, T1, Desp[0:6], Ffem1)
@@ -199,19 +225,20 @@ else:
         desp_traslacionales = [np.hypot(Desp[i], Desp[i+1]) for i in range(0, 9, 3)]
         max_delta_mm = max(desp_traslacionales) * 1000
         
-        fig_def = vi.graficar_deformada(nodos, elementos, Desp, factor_amplificacion=50)
+        # Graficadora de deformada actualizada (ahora auto-escala)
+        fig_def = vi.graficar_deformada(nodos, elementos, Desp)
         st.plotly_chart(fig_def, use_container_width=True)
         st.markdown(f'<div class="caja-resultados"><b>Desplazamiento máximo (\(\delta_{{max}}\)):</b> {max_delta_mm:.2f} mm</div>', unsafe_allow_html=True)
         
     with tab_reac:
         colR1, colR2 = st.columns(2)
         with colR1:
-            st.write("**Reacciones Nodo 1**")
+            st.write(f"**Reacciones Nodo 1 ({apoyo_n1})**")
             st.write(f"Rx: {Reacciones[0]:.2f} kN")
             st.write(f"Ry: {Reacciones[1]:.2f} kN")
             st.write(f"Mz: {Reacciones[2]:.2f} kN·m")
         with colR2:
-            st.write("**Reacciones Nodo 3**")
+            st.write(f"**Reacciones Nodo 3 ({apoyo_n3})**")
             st.write(f"Rx: {Reacciones[6]:.2f} kN")
             st.write(f"Ry: {Reacciones[7]:.2f} kN")
             st.write(f"Mz: {Reacciones[8]:.2f} kN·m")
