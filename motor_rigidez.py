@@ -103,10 +103,11 @@ def resolver_sistema(K_global, F_global, gdl_restringidos):
     D_total = np.zeros(num_gdl)
     D_total[gdl_libres] = D_libres
     
-    # Calcular fuerzas totales (incluyendo reacciones)
-    F_total = K_global @ D_total
+    # EL GRAN ARREGLO: Las verdaderas reacciones físicas son las fuerzas internas 
+    # menos las cargas nodales equivalentes aplicadas externamente.
+    Reacciones = F_total - F_global
     
-    return D_total, F_total
+    return D_total, Reacciones
 
 def fuerzas_internas_elemento(k_local, T, D_global_elemento):
     """
