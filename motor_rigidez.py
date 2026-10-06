@@ -102,6 +102,9 @@ def resolver_sistema(K_global, F_global, gdl_restringidos):
     # Reconstruir vector de desplazamientos completo
     D_total = np.zeros(num_gdl)
     D_total[gdl_libres] = D_libres
+
+    # Calcular fuerzas de equilibrio interno
+    F_total = K_global @ D_total
     
     # EL GRAN ARREGLO: Las verdaderas reacciones físicas son las fuerzas internas 
     # menos las cargas nodales equivalentes aplicadas externamente.
