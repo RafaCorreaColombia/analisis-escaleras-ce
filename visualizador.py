@@ -9,11 +9,13 @@ C_GRIS_CLARO = "#F4F5F7"
 C_AZUL_SUAVE = "rgba(26, 37, 48, 0.1)"
 C_NARANJA_SUAVE = "rgba(230, 126, 34, 0.2)"
 
-def graficar_modelo_basico(nodos, elementos, titulo="Geometría del Modelo"):
+def graficar_modelo_basico(nodos, elementos, titulo="Geometría del Modelo", apoyos=["Libre", "Libre", "Libre"]):
     """
-    Dibuja los nodos y las líneas que representan los elementos estructurales.
+    Dibuja los nodos y las líneas que representan los elementos estructurales,
+    además de los símbolos de los apoyos en los extremos.
     nodos: lista de coordenadas [[x1, y1], [x2, y2], [x3, y3]]
     elementos: lista de tuplas con los índices de los nodos [(0, 1), (1, 2)]
+    apoyos: lista de strings con el tipo de apoyo por nodo.
     """
     fig = go.Figure()
     
@@ -27,6 +29,18 @@ def graficar_modelo_basico(nodos, elementos, titulo="Geometría del Modelo"):
             hoverinfo='none', showlegend=False
         ))
         
+    # Dibujar Símbolos de Apoyo (Debajo de los nodos)
+    for i, apoyo in enumerate(apoyos):
+        if apoyo != "Libre":
+            x, y = nodos[i]
+            # Seleccionamos un símbolo de Plotly según el apoyo
+            simbolo = 'square' if apoyo == "Empotrado" else ('triangle-up' if apoyo == "Articulado" else 'circle-cross')
+            fig.add_trace(go.Scatter(
+                x=[x], y=[y], mode='markers', 
+                marker=dict(symbol=simbolo, size=22, color=C_GRIS), 
+                hovertext=f"Apoyo {apoyo}", hoverinfo="text", showlegend=False
+            ))
+            
     # Dibujar nodos (puntos grandes)
     nx = [n[0] for n in nodos]
     ny = [n[1] for n in nodos]
@@ -53,7 +67,8 @@ def graficar_modelo_basico(nodos, elementos, titulo="Geometría del Modelo"):
 
 def graficar_diagrama(nodos, elementos, x_locales, valores, titulo, color_linea, color_relleno, invertir_signo=False):
     """
-    Grafica diagramas (N, V, M) perpendiculares al eje de cada elemento.
+    Grafica diagramas (N, V, M) perpendiculares al eje de cada elemento,
+    e incluye etiquetas con los valores máximos y mínimos.
     
     x_locales: lista de arrays (uno por elemento) con las distancias locales (0 a L)
     valores: lista de arrays (uno por elemento) con las magnitudes del diagrama
@@ -64,11 +79,11 @@ def graficar_diagrama(nodos, elementos, x_locales, valores, titulo, color_linea,
     # 1. Encontrar el valor máximo absoluto para calcular un factor de escala visual
     max_val = max([np.max(np.abs(v)) for v in valores if len(v) > 0] + [1e-6])
     
-    # Calcular tamaño de la pantalla (L mayor del proyecto) para escalar el diagrama al 15% del tamaño total
+    # Calcular tamaño de la pantalla (L mayor del proyecto) para escalar el diagrama al 20% del tamaño total
     xs = [n[0] for n in nodos]
     ys = [n[1] for n in nodos]
     rango_espacial = max(max(xs)-min(xs), max(ys)-min(ys), 1.0)
-    factor_escala = (0.15 * rango_espacial) / max_val
+    factor_escala = (0.20 * rango_espacial) / max_val
     
     # 2. Dibujar la línea base de la escalera
     for (n1, n2) in elementos:
@@ -89,10 +104,7 @@ def graficar_diagrama(nodos, elementos, x_locales, valores, titulo, color_linea,
         
         # Extraer datos locales
         xl = x_locales[i]
-        val = valores[i]
-        
-        if invertir_signo:
-            val = -val
+        val = -valores[i] if invertir_signo else valores[i]
             
         # Calcular coordenadas globales del diagrama (perpendiculares al eje)
         # Vector director: (c, s). Vector normal perpendicular: (-s, c)
@@ -113,6 +125,16 @@ def graficar_diagrama(nodos, elementos, x_locales, valores, titulo, color_linea,
             hoverinfo='text', hovertext=textos_hover + ["", ""],
             name=f"Tramo {i+1}"
         ))
+        
+        # 4. Anotar valores críticos numéricos en el gráfico (máximos, mínimos y extremos)
+        idx_criticos = set([0, len(xl)-1, np.argmax(valores[i]), np.argmin(valores[i])])
+        for idx in idx_criticos:
+            v_real = valores[i][idx]
+            if abs(v_real) > 0.1: # No anotar ceros absolutos para no saturar de texto
+                fig.add_annotation(
+                    x=xd[idx], y=yd[idx], text=f"<b>{v_real:.1f}</b>", showarrow=False,
+                    font=dict(size=11, color=color_linea), bgcolor="rgba(255,255,255,0.8)", borderpad=2
+                )
 
     fig.update_layout(
         title=dict(text=titulo, font=dict(color=C_AZUL, size=18)),
@@ -125,11 +147,20 @@ def graficar_diagrama(nodos, elementos, x_locales, valores, titulo, color_linea,
     )
     return fig
 
-def graficar_deformada(nodos, elementos, desplazamientos_globales, factor_amplificacion=100):
+def graficar_deformada(nodos, elementos, desplazamientos_globales):
     """
     Dibuja la estructura original (gris, tenue) y la estructura deformada (naranja, gruesa).
+    Ahora utiliza un auto-escalado dinámico para que la deformación siempre sea visible.
     """
     fig = go.Figure()
+    
+    # Auto-escalado de deformación
+    # Encontramos el desplazamiento máximo absoluto en todo el vector
+    desp_max = max(np.max(np.abs(desplazamientos_globales)), 1e-9)
+    # Calculamos el tamaño real del modelo en X
+    rango_x = max([n[0] for n in nodos]) - min([n[0] for n in nodos])
+    # Forzamos a que la deflexión más grande equivalga visualmente al 15% del modelo
+    factor_amplificacion = (rango_x * 0.15) / desp_max
     
     # Estructura Original
     for (n1, n2) in elementos:
@@ -139,7 +170,7 @@ def graficar_deformada(nodos, elementos, desplazamientos_globales, factor_amplif
             hoverinfo='none', name="Original"
         ))
         
-    # Calcular nodos deformados
+    # Calcular nodos deformados aplicando el nuevo factor
     nodos_def = []
     for i, (x, y) in enumerate(nodos):
         ux = desplazamientos_globales[i*3]
@@ -156,11 +187,11 @@ def graficar_deformada(nodos, elementos, desplazamientos_globales, factor_amplif
             mode='lines+markers', line=dict(color=C_NARANJA, width=4),
             marker=dict(size=8, color=C_AZUL),
             hoverinfo='text', hovertext=f"Elemento de N{n1+1} a N{n2+1} (Deformado)",
-            name="Deformada"
+            name="Deformada", showlegend=False
         ))
 
     fig.update_layout(
-        title=dict(text=f"Deformada (Amplificada {factor_amplificacion}x)", font=dict(color=C_AZUL, size=18)),
+        title=dict(text=f"Deformada (Auto-amplificada {factor_amplificacion:.0f}x)", font=dict(color=C_AZUL, size=18)),
         plot_bgcolor='white',
         xaxis=dict(showgrid=True, gridcolor='#e2e8f0', zeroline=False, scaleanchor="y", scaleratio=1),
         yaxis=dict(showgrid=True, gridcolor='#e2e8f0', zeroline=False),
@@ -192,8 +223,8 @@ if __name__ == "__main__":
     x_locales = [x1, x2]
     valores_M = [M1, M2]
     
-    # Graficar y mostrar en el navegador
-    fig_geom = graficar_modelo_basico(nodos, elementos)
+    # Graficar y mostrar en el navegador (probando con apoyos para ver los íconos)
+    fig_geom = graficar_modelo_basico(nodos, elementos, apoyos=["Empotrado", "Libre", "Rodillo"])
     fig_geom.show()
     
     # Nota: invertir_signo=True para que el momento positivo se dibuje hacia abajo (tracciones)
@@ -205,4 +236,10 @@ if __name__ == "__main__":
     )
     fig_momento.show()
     
-    print("✅ PRUEBA EXITOSA: Si se abrieron las pestañas en tu navegador con gráficas interactivas, el visualizador está listo.")
+    # Prueba de deformada con desplazamientos ficticios
+    # GDLs: ux1, uy1, rz1, ux2, uy2, rz2, ux3, uy3, rz3
+    desp_ficticios = np.array([0, 0, 0, 0.002, -0.015, 0.001, 0.005, 0, -0.002])
+    fig_def = graficar_deformada(nodos, elementos, desp_ficticios)
+    fig_def.show()
+    
+    print("✅ PRUEBA EXITOSA: Si se abrieron las pestañas en tu navegador con gráficas interactivas, apoyos y valores, el visualizador está listo.")
