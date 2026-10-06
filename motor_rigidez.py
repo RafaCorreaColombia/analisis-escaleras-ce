@@ -71,7 +71,6 @@ def ensamblar_K_sistema(matrices_globales, grados_libertad_elementos, num_nodos)
 def definir_gdl_restringidos(tipos_apoyo):
     """
     Traduce los tipos de apoyo en índices de Grados de Libertad (GDL) restringidos.
-    El formato de entrada es una lista: ["Empotrado", "Articulado", "Libre"]
     """
     gdl_restringidos = []
     for i, apoyo in enumerate(tipos_apoyo):
@@ -80,6 +79,8 @@ def definir_gdl_restringidos(tipos_apoyo):
             gdl_restringidos.extend([gdl_base, gdl_base+1, gdl_base+2]) # ux, uy, θz
         elif apoyo == "Articulado":
             gdl_restringidos.extend([gdl_base, gdl_base+1]) # ux, uy
+        elif apoyo == "Rodillo":
+            gdl_restringidos.extend([gdl_base+1]) # Solo uy (permite deslizamiento horizontal)
         # Si es "Libre", no se restringe nada
     return gdl_restringidos
 
