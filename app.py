@@ -87,7 +87,7 @@ with st.sidebar:
     st.header("2. Sección y Material")
     b = st.number_input("Ancho b (m)", value=1.00, step=0.1)
     h = st.number_input("Espesor h (m)", value=0.15, step=0.01)
-    fc = st.number_input("f'c (MPa)", value=21.0, step=1.0)
+    fc = st.number_input("f'c (MPa)", value=28.0, step=1.0)
     
     modificar_I = st.checkbox("⚙️ Modificar Inercia (I) manualmente")
     I_calc = (b * h**3) / 12
