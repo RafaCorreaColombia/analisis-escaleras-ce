@@ -44,7 +44,7 @@ st.markdown("**Criterio Estructural** | Herramienta didáctica para idealizar, a
 # BARRA LATERAL: ENTRADA DE DATOS
 # ==========================================
 with st.sidebar:
-    st.image("https://via.placeholder.com/250x80/1A2530/FFFFFF?text=CRITERIO+ESTRUCTURAL")
+    st.image("assets/IsotipoFClaroT.png", use_container_width=True)
     
     st.header("1. Geometría y Apoyos")
     modo_geo = st.radio("Modo de ingreso:", ["Rápido (Plantillas)", "Avanzado (Coordenadas)"])
@@ -377,7 +377,15 @@ else:
 st.markdown("""
 <hr style="border: 0; height: 1px; background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(230, 126, 34, 0.75), rgba(0, 0, 0, 0)); margin-top: 50px;">
 <div style="text-align: center; color: var(--azul-profundo); padding: 20px 0;">
+    <div style="margin-bottom: 15px;">
+        <img src="assets/IsotipoFClaro.png" alt="Criterio Estructural" style="max-width: 180px; height: auto;">
+    </div>
     <h4 style="margin:0;"><b>Ing. Rafael Antonio Correa Melano</b></h4>
+        <div class="w3-xlarge w3-padding-16">
+        <a href="https://www.instagram.com/rafacestructural" class="w3-hover-text-red w3-margin-right"><i class="fa fa-instagram"></i></a>
+        <a href="https://wa.me/573151600480" class="w3-hover-text-green w3-margin-right"><i class="fa fa-whatsapp"></i></a>
+        <a href="mailto:rafael.correa.ing@gmail.com" class="w3-hover-text-red"><i class="fa fa-envelope-o"></i></a>
+        </div>
     <p style="font-size: 0.9em; margin: 5px 0;">Ingeniero Civil • M.IE. <br> Universidad Industrial de Santander</p>
     <p style="font-size: 0.8em; color: #64748b; margin-top: 15px;">
         <b>Criterio Estructural</b><br>
