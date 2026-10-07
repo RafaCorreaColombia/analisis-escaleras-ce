@@ -284,8 +284,8 @@ else:
         # Caja de resultados detallada con HTML puro (sin LaTeX conflictivo)
         html_desp = f"""
         <div class="caja-resultados" style="margin-top: 15px;">
-            <b>Análisis de Desplazamientos Nodales (Nodo Crítico N{nodo_critico}):</b><br>
-            • <b>Resultante espacial (&delta;<sub>max</sub>):</b> <span class="highlight">{max_res:.2f} mm</span><br>
+            <b>Desplazamiento Nodal Máximo (Nodo Crítico N{nodo_critico}):</b><br>
+            • <b>Magnitud del desplazamiento (&delta;<sub>max</sub>):</b> <span class="highlight">{max_res:.2f} mm</span><br>
             • <b>Componente vertical (<i>v</i>):</b> {v_crit:.2f} mm &nbsp;|&nbsp; 
             • <b>Componente horizontal (<i>u</i>):</b> {u_crit:.2f} mm
             <p style="font-size: 0.85em; color: #64748b; margin: 5px 0 0 0;">
