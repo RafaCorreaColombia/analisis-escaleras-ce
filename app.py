@@ -289,7 +289,7 @@ else:
             • <b>Componente vertical (<i>v</i>):</b> {v_crit:.2f} mm &nbsp;|&nbsp; 
             • <b>Componente horizontal (<i>u</i>):</b> {u_crit:.2f} mm
             <p style="font-size: 0.85em; color: #64748b; margin: 5px 0 0 0;">
-                <i>Nota: La resultante combina la deflexión vertical por flexión y el desplazamiento axial/horizontal debido a la inclinación del tramo (&delta; = &radic;(<i>u</i><sup>2</sup> + <i>v</i><sup>2</sup>)).</i>
+                <i>Nota: La resultante corresponde a la magnitud del vector de desplazamiento traslacional del nodo. Combina sus componentes horizontal y vertical: (&delta; = &radic;(<i>u</i><sup>2</sup> + <i>v</i><sup>2</sup>)).</i>
             </p>
         </div>
         """
