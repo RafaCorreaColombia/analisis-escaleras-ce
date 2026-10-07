@@ -14,10 +14,26 @@ st.markdown("""
         --naranja-estructural: #E67E22;
         --gris-claro: #F4F5F7;
     }
-    .titulo-principal { color: #1A2530; font-weight: bold; border-bottom: 3px solid #E67E22; padding-bottom: 10px; }
-    .stButton>button { background-color: #1A2530; color: white; border-radius: 5px; width: 100%; font-weight: bold; }
-    .stButton>button:hover { background-color: #E67E22; color: white; border: none; }
-    .caja-resultados { background-color: #f8fafc; padding: 15px; border-left: 5px solid #E67E22; border-radius: 5px; margin-bottom: 15px;}
+    .titulo-principal { color: var(--azul-profundo); font-weight: bold; border-bottom: 3px solid var(--naranja-estructural); padding-bottom: 10px; }
+    .stButton>button { background-color: var(--azul-profundo); color: white; border-radius: 5px; width: 100%; font-weight: bold; }
+    .stButton>button:hover { background-color: var(--naranja-estructural); color: white; border: none; }
+    
+    /* Estética Criterio Estructural */
+    .caja-resultados { 
+        background-color: #fdf6f0; 
+        padding: 15px 20px; 
+        border-left: 6px solid var(--naranja-estructural); 
+        border-radius: 8px; 
+        margin-bottom: 15px;
+        color: var(--azul-profundo);
+    }
+    .caja-resultados h4 { margin-top: 0; color: var(--azul-profundo); font-weight: bold; border-bottom: 1px solid #ddd; padding-bottom: 8px; }
+    .caja-resultados p { margin: 8px 0; font-size: 1.05em; }
+    .highlight { color: var(--naranja-estructural); font-weight: bold; }
+    
+    /* Enlaces del Sidebar */
+    .link-ce { text-decoration: none; color: var(--azul-profundo); font-weight: bold; display: block; padding: 8px 0; border-bottom: 1px solid #ddd; }
+    .link-ce:hover { color: var(--naranja-estructural); }
     </style>
 """, unsafe_allow_html=True)
 
@@ -98,7 +114,6 @@ with st.sidebar:
         st.info(f"Inercia calculada: {I_calc:.6f} m⁴")
 
     st.markdown("---")
-    # Título y nota actualizados
     st.header("3. Cargas Gravitacionales (kN/m horizontal)")
     st.caption("Ingresa las cargas por metro de proyección horizontal. La app realiza automáticamente la estática sobre la longitud inclinada.")
     
@@ -128,6 +143,15 @@ with st.sidebar:
 
     st.markdown("---")
     btn_analizar = st.button("▶ ANALIZAR")
+    
+    # ENLACES INSTITUCIONALES EN EL SIDEBAR
+    st.markdown("---")
+    st.markdown("### 🌐 Criterio Estructural")
+    st.markdown("Repositorio de Laboratorios Virtuales")
+    st.markdown('<a href="https://rafacorreacolombia.github.io/Hormigon-armado/" target="_blank" class="link-ce">🏠 Inicio del Repositorio</a>', unsafe_allow_html=True)
+    st.markdown('<a href="https://rafacorreacolombia.github.io/Hormigon-armado/deflexiones/" target="_blank" class="link-ce">📉 Análisis de Deflexiones</a>', unsafe_allow_html=True)
+    st.markdown('<a href="https://rafacorreacolombia.github.io/Hormigon-armado/losas/" target="_blank" class="link-ce">🏗️ Losas en Una Dirección</a>', unsafe_allow_html=True)
+    st.markdown('<a href="https://rafacorreacolombia.github.io/Hormigon-armado/traslapos/" target="_blank" class="link-ce">🔗 Longitud de Traslapos</a>', unsafe_allow_html=True)
 
 
 # ==========================================
@@ -244,10 +268,12 @@ else:
         desp_traslacionales = [np.hypot(Desp[i], Desp[i+1]) for i in range(0, 9, 3)]
         max_delta_mm = max(desp_traslacionales) * 1000
         
-        # Graficadora de deformada actualizada (ahora auto-escala)
+        # Graficadora de deformada
         fig_def = vi.graficar_deformada(nodos, elementos, Desp)
         st.plotly_chart(fig_def, use_container_width=True)
-        st.markdown(f'<div class="caja-resultados"><b>Desplazamiento nodal máximo (\(\delta_{{max}}\)):</b> {max_delta_mm:.2f} mm</div>', unsafe_allow_html=True)
+        
+        # Uso de HTML directo sin saltos para evitar la franja gris
+        st.markdown(f'<div class="caja-resultados" style="margin-top: 15px;"><b>Desplazamiento nodal máximo (\(\delta_{{max}}\)):</b> {max_delta_mm:.2f} mm</div>', unsafe_allow_html=True)
         
     with tab_reac:
         colR1, colR2 = st.columns(2)
@@ -272,8 +298,8 @@ else:
     # Encontrar máximos absolutos
     Mu_max = max(np.max(np.abs(M1)), np.max(np.abs(M2)))
     Vu_max = max(np.max(np.abs(V1)), np.max(np.abs(V2)))
-    # Evaluar la tracción máxima. (Nuestra convención: Tracción es positiva).
-    # Si todo el diagrama es negativo (compresión), max() tomará el 0.0
+    
+    # Evaluar la tracción máxima
     Nu_traccion = max([0.0, np.max(N1), np.max(N2)])
     
     # Parámetros de Diseño
@@ -283,55 +309,56 @@ else:
     phi_v = 0.75
     
     # Cortante del Concreto (NSR-10)
-    # Eq C.11-3 básica
     Vc1 = 0.17 * np.sqrt(fc) * b * d_m * 1000 # en kN 
-    
-    # Eq C.11-8 tracción axial. 
-    # El término (Nu/Ag) debe estar en MPa. Nu [kN] / (b*h [m2] * 1000) = [MPa]
-    # Se usa -Nu_traccion porque la NSR-10 asume tracción como valor negativo en la fórmula.
     Vc2 = 0.17 * np.sqrt(fc) * b * d_m * 1000 * (1 + (0.29 * (-Nu_traccion) / (b * h * 1000)))
-    
-    # El concreto no puede aportar resistencia negativa al cortante si está muy agrietado
     Vc2 = max(0.0, Vc2)
     phi_Vc = phi_v * min(Vc1, Vc2)
     
     # Acero de Flexión (Ecuación Cuadrática Exacta de rho)
-    # Mu = phi * rho * b * d^2 * fy * (1 - 0.588235 * rho * fy / fc)
     coef_A = 0.588235 * fy / fc
     coef_B = -1.0
-    coef_C = (Mu_max) / (phi_f * b * d_m**2 * fy * 1000) # Mu en kNm convertido
+    coef_C = (Mu_max) / (phi_f * b * d_m**2 * fy * 1000) 
     
-    # Resolver ecuación cuadrática para rho
     discriminante = coef_B**2 - 4 * coef_A * coef_C
     if discriminante < 0:
         texto_As = "¡Sección Insuficiente! Aumente el espesor (h)."
         As_req_cm2 = 0
     else:
         rho_req = (-coef_B - np.sqrt(discriminante)) / (2 * coef_A)
-        As_req_cm2 = rho_req * b * d_m * 10000 # cm2
+        As_req_cm2 = rho_req * b * d_m * 10000 
         texto_As = f"{As_req_cm2:.2f} cm²"
         
     As_min_cm2 = 0.0018 * b * h * 10000
     
+    # RENDERIZADO DE DISEÑO (F-STRINGS PARA EVITAR FRANJAS GRISES)
     col_flex, col_cort = st.columns(2)
+    
     with col_flex:
-        st.markdown('<div class="caja-resultados">', unsafe_allow_html=True)
-        st.markdown("#### 📏 Diseño a Flexión")
-        st.write(f"**Demanda Crítica $|M_u|$:** {Mu_max:.2f} kN·m")
-        st.write(f"**$A_s$ requerido:** {texto_As}")
-        st.write(f"**$A_s$ mínimo (NSR-10):** {As_min_cm2:.2f} cm²")
-        st.markdown('</div>', unsafe_allow_html=True)
+        html_flexion = f"""
+        <div class="caja-resultados">
+            <h4>📏 Diseño a Flexión</h4>
+            <p><b>Demanda Crítica |M<sub>u</sub>|:</b> <span class="highlight">{Mu_max:.2f} kN·m</span></p>
+            <p><b>A<sub>s</sub> requerido:</b> {texto_As}</p>
+            <p><b>A<sub>s</sub> mínimo (NSR-10):</b> {As_min_cm2:.2f} cm²</p>
+        </div>
+        """
+        st.markdown(html_flexion, unsafe_allow_html=True)
         
     with col_cort:
-        st.markdown('<div class="caja-resultados">', unsafe_allow_html=True)
-        st.markdown("#### ✂️ Diseño a Cortante")
-        st.write(f"**Demanda Crítica $|V_u|$:** {Vu_max:.2f} kN; **$|N_u|$:** {Nu_traccion:.2f} kN")
-        st.write(f"**Capacidad del concreto $\phi V_c$:** {phi_Vc:.2f} kN (mínimo entre EQ C.11-3 y C.11-8)")
         if Vu_max <= phi_Vc:
-            st.write("✅ **Chequeo:** $V_u \le \phi V_c$ (No requiere refuerzo transversal)")
+            texto_chequeo = "✅ <b>Chequeo:</b> V<sub>u</sub> ≤ φV<sub>c</sub> (No requiere refuerzo transversal)"
         else:
-            st.write("❌ **Chequeo:** $V_u > \phi V_c$ (Requiere aumentar espesor o colocar estribos)")
-        st.markdown('</div>', unsafe_allow_html=True)
+            texto_chequeo = "❌ <b style='color:red;'>Chequeo:</b> V<sub>u</sub> > φV<sub>c</sub> (Requiere aumentar espesor o colocar estribos)"
+
+        html_cortante = f"""
+        <div class="caja-resultados">
+            <h4>✂️ Diseño a Cortante</h4>
+            <p><b>Demanda |V<sub>u</sub>|:</b> {Vu_max:.2f} kN &nbsp;|&nbsp; <b>Tracción |N<sub>u</sub>|:</b> {Nu_traccion:.2f} kN</p>
+            <p><b>Capacidad φV<sub>c</sub>:</b> <span class="highlight">{phi_Vc:.2f} kN</span> <span style="font-size:0.85em; color:#666;">(mínimo entre EQ C.11-3 y C.11-8)</span></p>
+            <p>{texto_chequeo}</p>
+        </div>
+        """
+        st.markdown(html_cortante, unsafe_allow_html=True)
 
     # ==========================================
     # CAJA NEGRA (REFERENCIA TÉCNICA)
@@ -343,3 +370,21 @@ else:
         st.dataframe(K_sis)
         st.write("**Vector de Cargas [F]:**")
         st.dataframe(F_sis)
+
+# ==========================================
+# FOOTER INSTITUCIONAL CRITERIO ESTRUCTURAL
+# ==========================================
+st.markdown("""
+<hr style="border: 0; height: 1px; background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(230, 126, 34, 0.75), rgba(0, 0, 0, 0)); margin-top: 50px;">
+<div style="text-align: center; color: var(--azul-profundo); padding: 20px 0;">
+    <h4 style="margin:0;"><b>Ing. Rafael Antonio Correa Melano</b></h4>
+    <p style="font-size: 0.9em; margin: 5px 0;">Ingeniero Civil • M.IE. <br> Universidad Industrial de Santander</p>
+    <p style="font-size: 0.8em; color: #64748b; margin-top: 15px;">
+        <b>Criterio Estructural</b><br>
+        © 2026 Rafael Antonio Correa Melano. Todos los derechos reservados.<br>
+        <span style="display: inline-block; margin-top: 5px; border: 1px solid var(--naranja-estructural); color: var(--naranja-estructural); padding: 2px 8px; border-radius: 4px; font-size: 0.9em;">
+            Bucaramanga, Colombia 🇨🇴
+        </span>
+    </p>
+</div>
+""", unsafe_allow_html=True)
