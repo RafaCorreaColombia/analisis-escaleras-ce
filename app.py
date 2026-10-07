@@ -263,7 +263,7 @@ else:
     
     # Cortante del Concreto (NSR-10)
     Vc1 = 0.17 * np.sqrt(fc) * b * d_m * 1000 # en kN
-    Vc2 = 0.17 * np.sqrt(fc) * b * d_m * 1000 * (1 + (0.29 * (-Nu_max ) / ( b * h * 1000 ) ) # en kN
+    Vc2 = 0.17 * np.sqrt(fc) * b * d_m * 1000 * (1 + (0.29 * (-Nu_max ) / ( b * h * 1000 ) ) ) # en kN
     phi_Vc = phi_v * min(Vc1, Vc2)
     
     # Acero de Flexión (Ecuación Cuadrática Exacta de rho)
