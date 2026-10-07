@@ -296,7 +296,7 @@ else:
     with col_cort:
         st.markdown('<div class="caja-resultados">', unsafe_allow_html=True)
         st.markdown("#### ✂️ Diseño a Cortante")
-        st.write(f"**Demanda Crítica $|V_u|$:** {Vu_max:.2f} kN; $|N_u|$:** {Nu_max:.2f} kN")
+        st.write(f"**Demanda Crítica $|V_u|$:** {Vu_max:.2f} kN; **$|N_u|$:** {Nu_max:.2f} kN")
         st.write(f"**Capacidad del concreto $\phi V_c$:** {phi_Vc:.2f} kN, acá se usa el menor valor obtenido entre EQ C.11-3 y C.11-8")
         if Vu_max <= phi_Vc:
             st.write("✅ **Chequeo:** $V_u \le \phi V_c$ (No requiere refuerzo transversal)")
