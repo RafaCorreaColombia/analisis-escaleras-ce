@@ -266,7 +266,7 @@ else:
     
     # Acero de Flexión (Ecuación Cuadrática Exacta de rho)
     # Mu = phi * rho * b * d^2 * fy * (1 - 0.588235 * rho * fy / fc)
-    coef_A = 0.59 * fy / fc
+    coef_A = 0.588235 * fy / fc
     coef_B = -1.0
     coef_C = (Mu_max) / (phi_f * b * d_m**2 * fy * 1000) # Mu en kNm convertido
     
