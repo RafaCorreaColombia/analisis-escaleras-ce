@@ -374,31 +374,28 @@ else:
 # ==========================================
 # FOOTER INSTITUCIONAL CRITERIO ESTRUCTURAL
 # ==========================================
-st.markdown("""
-    <!-- Importamos W3.CSS y Font Awesome para que los íconos y clases W3 funcionen -->
+st.markdown("---")
+st.markdown(
+    """
     <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-
-    <hr style="border: 0; height: 1px; background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(230, 126, 34, 0.75), rgba(0, 0, 0, 0)); margin-top: 50px;">
-    <div style="text-align: center; color: var(--azul-profundo); padding: 20px 0;">
-        <div style="margin-bottom: 15px;">
-            <img src="https://raw.githubusercontent.com/rafacorreacolombia/Hormigon-armado/main/assets/IsotipoFClaroT.png" alt="Criterio Estructural" style="max-width: 180px; height: auto;">
-        </div>
+    <div style="text-align: center; color: #1A2530; padding: 10px 0;">
+        <img src="https://raw.githubusercontent.com/rafacorreacolombia/Hormigon-armado/main/assets/IsotipoFClaroT.png" alt="Criterio Estructural" style="max-width: 180px; height: auto; margin-bottom: 10px;">
         <h4 style="margin:0;"><b>Ing. Rafael Antonio Correa Melano</b></h4>
-        
         <div class="w3-xlarge w3-padding-16">
             <a href="https://www.instagram.com/rafacestructural" target="_blank" class="w3-hover-text-red w3-margin-right" style="text-decoration: none; color: inherit;"><i class="fa fa-instagram"></i></a>
             <a href="https://wa.me/573151600480" target="_blank" class="w3-hover-text-green w3-margin-right" style="text-decoration: none; color: inherit;"><i class="fa fa-whatsapp"></i></a>
             <a href="mailto:rafael.correa.ing@gmail.com" class="w3-hover-text-red" style="text-decoration: none; color: inherit;"><i class="fa fa-envelope-o"></i></a>
         </div>
-        
         <p style="font-size: 0.9em; margin: 5px 0;">Ingeniero Civil • M.IE. <br> Universidad Industrial de Santander</p>
         <p style="font-size: 0.8em; color: #64748b; margin-top: 15px;">
             <b>Criterio Estructural</b><br>
             © 2026 Rafael Antonio Correa Melano. Todos los derechos reservados.<br>
-            <span style="display: inline-block; margin-top: 5px; border: 1px solid var(--naranja-estructural); color: var(--naranja-estructural); padding: 2px 8px; border-radius: 4px; font-size: 0.9em;">
+            <span style="display: inline-block; margin-top: 5px; border: 1px solid #E67E22; color: #E67E22; padding: 2px 8px; border-radius: 4px; font-size: 0.9em;">
                 Bucaramanga, Colombia 🇨🇴
             </span>
         </p>
     </div>
-""", unsafe_allow_html=True)
+    """,
+    unsafe_allow_html=True,
+)
