@@ -149,9 +149,9 @@ with st.sidebar:
     st.markdown("### 🌐 Criterio Estructural")
     st.markdown("Repositorio de Laboratorios Virtuales")
     st.markdown('<a href="https://rafacorreacolombia.github.io/Hormigon-armado/" target="_blank" class="link-ce">🏠 Inicio del Repositorio</a>', unsafe_allow_html=True)
-    st.markdown('<a href="https://rafacorreacolombia.github.io/Hormigon-armado/deflexiones/" target="_blank" class="link-ce">📉 Análisis de Deflexiones</a>', unsafe_allow_html=True)
-    st.markdown('<a href="https://rafacorreacolombia.github.io/Hormigon-armado/losas/" target="_blank" class="link-ce">🏗️ Losas en Una Dirección</a>', unsafe_allow_html=True)
-    st.markdown('<a href="https://rafacorreacolombia.github.io/Hormigon-armado/traslapos/" target="_blank" class="link-ce">🔗 Longitud de Traslapos</a>', unsafe_allow_html=True)
+    st.markdown('<a href="https://rafacorreacolombia.github.io/Hormigon-armado/vigas/deflexiones.html" target="_blank" class="link-ce">📉 Análisis de Deflexiones</a>', unsafe_allow_html=True)
+    st.markdown('<a href="https://rafacorreacolombia.github.io/Hormigon-armado/losas/losa1dir.html" target="_blank" class="link-ce">🏗️ Losas en Una Dirección</a>', unsafe_allow_html=True)
+    st.markdown('<a href="https://rafacorreacolombia.github.io/Hormigon-armado/herramientas/traslapos.html" target="_blank" class="link-ce">🔗 Longitud de Traslapos</a>', unsafe_allow_html=True)
 
 
 # ==========================================
