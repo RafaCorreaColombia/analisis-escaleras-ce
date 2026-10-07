@@ -264,16 +264,36 @@ else:
         st.plotly_chart(fig_N, use_container_width=True)
 
     with tab_def:
-        # Calcular desplazamiento nodal máximo (traslacional)
-        desp_traslacionales = [np.hypot(Desp[i], Desp[i+1]) for i in range(0, 9, 3)]
-        max_delta_mm = max(desp_traslacionales) * 1000
-        
-        # Graficadora de deformada
+        # Calcular componentes y resultantes nodales para cada nodo (i = 0, 3, 6)
+        # GDL: Nodo 0 -> [0:ux, 1:uy, 2:rz], Nodo 1 -> [3:ux, 4:uy, 5:rz], Nodo 2 -> [6:ux, 7:uy, 8:rz]
+        desplazamientos_detalle = []
+        for idx, nodo_num in enumerate([1, 2, 3]):
+            i = idx * 3
+            u_horiz = Desp[i] * 1000     # mm
+            v_vert = Desp[i+1] * 1000    # mm
+            resultante = np.hypot(u_horiz, v_vert) # mm
+            desplazamientos_detalle.append((nodo_num, resultante, v_vert, u_horiz))
+
+        # Encontrar el nodo con mayor desplazamiento resultante
+        nodo_critico, max_res, v_crit, u_crit = max(desplazamientos_detalle, key=lambda x: x[1])
+
+        # Gráfica de la deformada
         fig_def = vi.graficar_deformada(nodos, elementos, Desp)
         st.plotly_chart(fig_def, use_container_width=True)
         
-        # Uso de HTML directo sin saltos para evitar la franja gris
-        st.markdown(f'<div class="caja-resultados" style="margin-top: 15px;"><b>Desplazamiento nodal máximo (&delta;<sub>max</sub>):</b> {max_delta_mm:.2f} mm</div>', unsafe_allow_html=True)
+        # Caja de resultados detallada y transparente
+        html_desp = f"""
+        <div class="caja-resultados" style="margin-top: 15px;">
+            <b>Análisis de Desplazamientos Nodales (Nodo Crítico N{nodo_critico}):</b><br>
+            • <b>Resultante espacial (\(\delta_{{max}}\)):</b> <span class="highlight">{max_res:.2f} mm</span><br>
+            • <b>Componente vertical (\(v\)):</b> {v_crit:.2f} mm &nbsp;|&nbsp; 
+            • <b>Componente horizontal (\(u\)):</b> {u_crit:.2f} mm
+            <p style="font-size: 0.85em; color: #64748b; margin: 5px 0 0 0;">
+                <i>Nota: La resultante combina la deflexión vertical por flexión y el desplazamiento axial/horizontal debido a la inclinación del tramo (\(\delta = \sqrt{{u^2 + v^2}}\)).</i>
+            </p>
+        </div>
+        """
+        st.markdown(html_desp, unsafe_allow_html=True)
         
     with tab_reac:
         colR1, colR2 = st.columns(2)
