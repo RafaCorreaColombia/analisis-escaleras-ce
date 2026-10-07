@@ -253,6 +253,7 @@ else:
     # Encontrar máximos absolutos
     Mu_max = max(np.max(np.abs(M1)), np.max(np.abs(M2)))
     Vu_max = max(np.max(np.abs(V1)), np.max(np.abs(V2)))
+    Nu_max = max(np.max(N1), np.max(N2))
     
     # Parámetros de Diseño
     d_m = h - 0.04 # Peralte efectivo en metros
@@ -261,8 +262,9 @@ else:
     phi_v = 0.75
     
     # Cortante del Concreto (NSR-10)
-    Vc = 0.17 * np.sqrt(fc) * b * d_m * 1000 # en kN
-    phi_Vc = phi_v * Vc
+    Vc1 = 0.17 * np.sqrt(fc) * b * d_m * 1000 # en kN
+    Vc2 = 0.17 * np.sqrt(fc) * b * d_m * 1000 * (1 + (0.29 * (-Nu_max ) / ( b * h * 1000 ) ) # en kN
+    phi_Vc = phi_v * min(Vc1, Vc2)
     
     # Acero de Flexión (Ecuación Cuadrática Exacta de rho)
     # Mu = phi * rho * b * d^2 * fy * (1 - 0.588235 * rho * fy / fc)
@@ -294,8 +296,8 @@ else:
     with col_cort:
         st.markdown('<div class="caja-resultados">', unsafe_allow_html=True)
         st.markdown("#### ✂️ Diseño a Cortante")
-        st.write(f"**Demanda Crítica $|V_u|$:** {Vu_max:.2f} kN")
-        st.write(f"**Capacidad del concreto $\phi V_c$:** {phi_Vc:.2f} kN")
+        st.write(f"**Demanda Crítica $|V_u|$:** {Vu_max:.2f} kN; $|N_u|$:** {Nu_max:.2f} kN")
+        st.write(f"**Capacidad del concreto $\phi V_c$:** {phi_Vc:.2f} kN, acá se usa el menor valor obtenido entre EQ C.11-3 y C.11-8")
         if Vu_max <= phi_Vc:
             st.write("✅ **Chequeo:** $V_u \le \phi V_c$ (No requiere refuerzo transversal)")
         else:
