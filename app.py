@@ -146,7 +146,7 @@ with st.sidebar:
     
     # ENLACES INSTITUCIONALES EN EL SIDEBAR
     st.markdown("---")
-    st.markdown("### 🌐 Criterio Estructural")
+    st.image("assets/IsotipoFClaroT.png", use_container_width=True)
     st.markdown("Repositorio de Laboratorios Virtuales")
     st.markdown('<a href="https://rafacorreacolombia.github.io/Hormigon-armado/" target="_blank" class="link-ce">🏠 Inicio del Repositorio</a>', unsafe_allow_html=True)
     st.markdown('<a href="https://rafacorreacolombia.github.io/Hormigon-armado/vigas/deflexiones.html" target="_blank" class="link-ce">📉 Análisis de Deflexiones</a>', unsafe_allow_html=True)
