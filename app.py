@@ -253,7 +253,9 @@ else:
     # Encontrar máximos absolutos
     Mu_max = max(np.max(np.abs(M1)), np.max(np.abs(M2)))
     Vu_max = max(np.max(np.abs(V1)), np.max(np.abs(V2)))
-    Nu_max = max(np.max(N1), np.max(N2))
+    # Evaluar la tracción máxima. (Nuestra convención: Tracción es positiva).
+    # Si todo el diagrama es negativo (compresión), max() tomará el 0.0
+    Nu_traccion = max([0.0, np.max(N1), np.max(N2)])
     
     # Parámetros de Diseño
     d_m = h - 0.04 # Peralte efectivo en metros
@@ -262,8 +264,16 @@ else:
     phi_v = 0.75
     
     # Cortante del Concreto (NSR-10)
-    Vc1 = 0.17 * np.sqrt(fc) * b * d_m * 1000 # en kN
-    Vc2 = 0.17 * np.sqrt(fc) * b * d_m * 1000 * (1 + (0.29 * (-Nu_max ) / ( b * h * 1000 ) ) ) # en kN
+    # Eq C.11-3 básica
+    Vc1 = 0.17 * np.sqrt(fc) * b * d_m * 1000 # en kN 
+    
+    # Eq C.11-8 tracción axial. 
+    # El término (Nu/Ag) debe estar en MPa. Nu [kN] / (b*h [m2] * 1000) = [MPa]
+    # Se usa -Nu_traccion porque la NSR-10 asume tracción como valor negativo en la fórmula.
+    Vc2 = 0.17 * np.sqrt(fc) * b * d_m * 1000 * (1 + (0.29 * (-Nu_traccion) / (b * h * 1000)))
+    
+    # El concreto no puede aportar resistencia negativa al cortante si está muy agrietado
+    Vc2 = max(0.0, Vc2)
     phi_Vc = phi_v * min(Vc1, Vc2)
     
     # Acero de Flexión (Ecuación Cuadrática Exacta de rho)
