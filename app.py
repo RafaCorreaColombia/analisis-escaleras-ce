@@ -127,14 +127,14 @@ with st.sidebar:
     st.success(f"**Wu1 = {Wu1:.2f} kN/m | Wu2 = {Wu2:.2f} kN/m**")
 
     st.markdown("---")
-    btn_analizar = st.button("▶ ANALIZAR Y DISEÑAR")
+    btn_analizar = st.button("▶ ANALIZAR")
 
 
 # ==========================================
 # ÁREA PRINCIPAL
 # ==========================================
 if not btn_analizar:
-    st.info("👈 Define la geometría, sección y cargas en el panel izquierdo. Luego haz clic en 'Analizar y Diseñar'.")
+    st.info("👈 Define la geometría, sección y cargas en el panel izquierdo. Luego haz clic en 'Analizar'.")
     
     # Dibujar geometría vacía previa con los apoyos seleccionados
     nodos_ini = [[x1, y1], [x2, y2], [x3, y3]]
@@ -221,14 +221,14 @@ else:
         st.plotly_chart(fig_N, use_container_width=True)
 
     with tab_def:
-        # Calcular deflexión máxima (traslacional)
+        # Calcular desplazamiento nodal máximo (traslacional)
         desp_traslacionales = [np.hypot(Desp[i], Desp[i+1]) for i in range(0, 9, 3)]
         max_delta_mm = max(desp_traslacionales) * 1000
         
         # Graficadora de deformada actualizada (ahora auto-escala)
         fig_def = vi.graficar_deformada(nodos, elementos, Desp)
         st.plotly_chart(fig_def, use_container_width=True)
-        st.markdown(f'<div class="caja-resultados"><b>Desplazamiento máximo (\(\delta_{{max}}\)):</b> {max_delta_mm:.2f} mm</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="caja-resultados"><b>Desplazamiento nodal máximo (\(\delta_{{max}}\)):</b> {max_delta_mm:.2f} mm</div>', unsafe_allow_html=True)
         
     with tab_reac:
         colR1, colR2 = st.columns(2)
@@ -244,10 +244,10 @@ else:
             st.write(f"Mz: {Reacciones[8]:.2f} kN·m")
 
     # ---------------------------------------------------------
-    # MÓDULO DE DISEÑO CRÍTICO (NSR-10 / ACI 318)
+    # MÓDULO DE VERIFICACIONES BÁSICAS DE DISEÑO (NSR-10 / ACI 318)
     # ---------------------------------------------------------
     st.markdown("---")
-    st.subheader("🟦 Nivel 3: Verificación de Diseño Crítico")
+    st.subheader("🟦 Nivel 3: Verificaciones Básicas de Diseño")
     st.write("Comprobación de la máxima demanda. *Asume acero fy = 420 MPa y recubrimiento al centroide de 4 cm.*")
     
     # Encontrar máximos absolutos
