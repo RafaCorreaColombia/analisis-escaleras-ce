@@ -188,7 +188,16 @@ else:
     try:
         Desp, Reacciones = mr.resolver_sistema(K_sis, F_sis, restricciones)
     except np.linalg.LinAlgError:
-        st.error("🚨 **Error de Estática:** La estructura es inestable (matriz singular). Por ejemplo, si usas dos rodillos horizontales, la escalera no tiene restricción para no deslizarse. Cambia al menos un apoyo a 'Articulado' o 'Empotrado'.")
+        st.error("""
+        🚨 **Error de Estática: La estructura es inestable (matriz singular).** 
+        
+        No hay suficientes restricciones para evitar el movimiento de cuerpo rígido. Casos comunes:
+        * **Articulado + Libre:** La escalera gira como un péndulo libremente.
+        * **Rodillo + Rodillo:** La escalera se desliza horizontalmente sin control.
+        * **Rodillo + Libre:** Faltan restricciones tanto al giro como al desplazamiento.
+        
+        👉 **Solución:** Asegúrate de tener al menos 3 grados de libertad restringidos (ej. cambia un apoyo a 'Empotrado', o usa un 'Articulado' junto a otro apoyo).
+        """)
         st.stop()
     
     # Recuperación de Fuerzas
