@@ -22,7 +22,7 @@ def matriz_rigidez_local(E, A, I, L):
     k[0, 0] = k[3, 3] = E * A / L
     k[0, 3] = k[3, 0] = -E * A / L
     
-    # Rigidez a Flexión y Cortante
+    # Rigidez a Flexión (Euler-Bernoulli)
     k[1, 1] = k[4, 4] = 12 * E * I / (L**3)
     k[1, 4] = k[4, 1] = -12 * E * I / (L**3)
     
