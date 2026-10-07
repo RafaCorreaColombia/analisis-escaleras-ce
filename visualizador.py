@@ -24,8 +24,8 @@ def obtener_limites_fijos(nodos):
     altura_y = max(y_max - y_min, 1.0)
     
     # Márgenes asimétricos: apretados a los lados, más espacio arriba/abajo para los diagramas
-    margen_x = 0.050 * longitud_x
-    margen_y = 0.125 * max(longitud_x, altura_y)
+    margen_x = 0.10 * longitud_x
+    margen_y = 0.20 * max(longitud_x, altura_y)
     
     rango_x = [x_min - margen_x, x_max + margen_x]
     rango_y = [y_min - margen_y, y_max + margen_y]
