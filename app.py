@@ -114,8 +114,8 @@ with st.sidebar:
         st.info(f"Inercia calculada: {I_calc:.6f} m⁴")
 
     st.markdown("---")
-    st.header("3. Cargas Gravitacionales (kN/m horizontal)")
-    st.caption("Ingresa las cargas por metro de proyección horizontal. La app realiza automáticamente la estática sobre la longitud inclinada.")
+    st.header("3. Cargas Gravitacionales (kN/m)")
+    st.caption("Ingresa la carga distribuida vertical por unidad de longitud del elemento. La aplicación la transforma automáticamente a los ejes locales del elemento.")
     
     # Cargas divididas por tramo
     colA, colB = st.columns(2)
