@@ -11,21 +11,26 @@ C_NARANJA_SUAVE = "rgba(230, 126, 34, 0.2)"
 
 def obtener_limites_fijos(nodos):
     """
-    Calcula una ventana de visualización fija (bounding box) para que 
-    la escalera tenga exactamente el mismo tamaño en TODAS las gráficas.
+    Calcula una ventana de visualización fija con márgenes ajustados 
+    para que la escalera se vea grande y mantenga la misma escala.
     """
     xs = [n[0] for n in nodos]
     ys = [n[1] for n in nodos]
     x_min, x_max = min(xs), max(xs)
     y_min, y_max = min(ys), max(ys)
-    rango_espacial = max(x_max - x_min, y_max - y_min, 1.0)
     
-    # 35% de margen para que quepan los diagramas extruidos y los textos
-    margen = 0.35 * rango_espacial
-    rango_x = [x_min - margen, x_max + margen]
-    rango_y = [y_min - margen, y_max + margen]
+    # Usamos la longitud en X como referencia (las escaleras suelen ser más largas que altas)
+    longitud_x = max(x_max - x_min, 1.0)
+    altura_y = max(y_max - y_min, 1.0)
     
-    return rango_x, rango_y, rango_espacial
+    # Márgenes asimétricos: apretados a los lados, más espacio arriba/abajo para los diagramas
+    margen_x = 0.10 * longitud_x
+    margen_y = 0.25 * max(longitud_x, altura_y)
+    
+    rango_x = [x_min - margen_x, x_max + margen_x]
+    rango_y = [y_min - margen_y, y_max + margen_y]
+    
+    return rango_x, rango_y, longitud_x
 
 def graficar_modelo_basico(nodos, elementos, titulo="Geometría del Modelo", apoyos=["Libre", "Libre", "Libre"]):
     fig = go.Figure()
@@ -78,7 +83,9 @@ def graficar_diagrama(nodos, elementos, x_locales, valores, titulo, color_linea,
     rango_x, rango_y, rango_espacial = obtener_limites_fijos(nodos)
     
     max_val = max([np.max(np.abs(v)) for v in valores if len(v) > 0] + [1e-6])
-    factor_escala = (0.20 * rango_espacial) / max_val
+    
+    # Reducimos el factor a 0.15 para que el diagrama no se salga del nuevo margen en Y
+    factor_escala = (0.15 * rango_espacial) / max_val
     
     # Dibujar línea base
     for (n1, n2) in elementos:
@@ -137,7 +144,8 @@ def graficar_deformada(nodos, elementos, desplazamientos_globales):
     rango_x, rango_y, rango_espacial = obtener_limites_fijos(nodos)
     
     desp_max = max(np.max(np.abs(desplazamientos_globales)), 1e-9)
-    factor_amplificacion = (rango_espacial * 0.15) / desp_max
+    # 10% para que la deformada sea visible pero sutil
+    factor_amplificacion = (rango_espacial * 0.10) / desp_max 
     
     # Estructura Original
     for (n1, n2) in elementos:
@@ -172,5 +180,4 @@ def graficar_deformada(nodos, elementos, desplazamientos_globales):
     return fig
 
 if __name__ == "__main__":
-    print("Iniciando prueba gráfica con límites fijos...")
-    # Puedes ejecutar python visualizador.py para comprobarlo.
+    print("Iniciando prueba gráfica con límites asimétricos ajustados...")
