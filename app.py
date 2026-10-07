@@ -281,15 +281,15 @@ else:
         fig_def = vi.graficar_deformada(nodos, elementos, Desp)
         st.plotly_chart(fig_def, use_container_width=True)
         
-        # Caja de resultados detallada y transparente
+        # Caja de resultados detallada con HTML puro (sin LaTeX conflictivo)
         html_desp = f"""
         <div class="caja-resultados" style="margin-top: 15px;">
             <b>Análisis de Desplazamientos Nodales (Nodo Crítico N{nodo_critico}):</b><br>
-            • <b>Resultante espacial (\(\delta_{{max}}\)):</b> <span class="highlight">{max_res:.2f} mm</span><br>
-            • <b>Componente vertical (\(v\)):</b> {v_crit:.2f} mm &nbsp;|&nbsp; 
-            • <b>Componente horizontal (\(u\)):</b> {u_crit:.2f} mm
+            • <b>Resultante espacial (&delta;<sub>max</sub>):</b> <span class="highlight">{max_res:.2f} mm</span><br>
+            • <b>Componente vertical (<i>v</i>):</b> {v_crit:.2f} mm &nbsp;|&nbsp; 
+            • <b>Componente horizontal (<i>u</i>):</b> {u_crit:.2f} mm
             <p style="font-size: 0.85em; color: #64748b; margin: 5px 0 0 0;">
-                <i>Nota: La resultante combina la deflexión vertical por flexión y el desplazamiento axial/horizontal debido a la inclinación del tramo (\(\delta = \sqrt{{u^2 + v^2}}\)).</i>
+                <i>Nota: La resultante combina la deflexión vertical por flexión y el desplazamiento axial/horizontal debido a la inclinación del tramo (&delta; = &radic;(<i>u</i><sup>2</sup> + <i>v</i><sup>2</sup>)).</i>
             </p>
         </div>
         """
