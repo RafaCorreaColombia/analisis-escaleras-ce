@@ -184,20 +184,30 @@ else:
     # El nodo 2 (descanso/quiebre) es libre por defecto en escaleras
     restricciones = mr.definir_gdl_restringidos([apoyo_n1, "Libre", apoyo_n3])
     
-    # Solución (con captura de error para estructuras inestables)
+    # --- CANDADO 1: Conteo de reacciones mínimas para estabilidad ---
+    if len(restricciones) < 3:
+        st.error("""
+        🚨 **Error de Estática: Estructura inestable (Mecanismo).** 
+        
+        Tienes menos de 3 reacciones en total. La escalera actúa como un cuerpo rígido sin suficiente restricción para mantenerse en equilibrio.
+        * **Articulado + Libre:** La escalera gira como un péndulo.
+        * **Rodillo + Rodillo:** Faltan restricciones para estabilizar la geometría.
+        
+        👉 **Solución:** Cambia los apoyos para asegurar al menos 3 restricciones (ej. usar un apoyo 'Empotrado', o un 'Articulado' junto a un 'Rodillo').
+        """)
+        st.stop()
+
+    # Solución matricial (con captura de error residual)
     try:
         Desp, Reacciones = mr.resolver_sistema(K_sis, F_sis, restricciones)
+        
+        # --- CANDADO 2: Fugas numéricas (Mecanismos por geometría paralela) ---
+        if np.max(np.abs(Desp)) > 5.0: # Si se deforma más de 5 m, es inestable
+            st.error("🚨 **Error de Estática: Desplazamiento irreal detectado.** La estructura es inestable y se comporta como un mecanismo (fuerzas no controladas). Revisa tus apoyos.")
+            st.stop()
+            
     except np.linalg.LinAlgError:
-        st.error("""
-        🚨 **Error de Estática: La estructura es inestable (matriz singular).** 
-        
-        No hay suficientes restricciones para evitar el movimiento de cuerpo rígido. Casos comunes:
-        * **Articulado + Libre:** La escalera gira como un péndulo libremente.
-        * **Rodillo + Rodillo:** La escalera se desliza horizontalmente sin control.
-        * **Rodillo + Libre:** Faltan restricciones tanto al giro como al desplazamiento.
-        
-        👉 **Solución:** Asegúrate de tener al menos 3 grados de libertad restringidos (ej. cambia un apoyo a 'Empotrado', o usa un 'Articulado' junto a otro apoyo).
-        """)
+        st.error("🚨 **Error de Estática:** La estructura es inestable (matriz singular). Cambia los apoyos a opciones más rígidas.")
         st.stop()
     
     # Recuperación de Fuerzas
