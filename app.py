@@ -273,7 +273,7 @@ else:
         st.plotly_chart(fig_def, use_container_width=True)
         
         # Uso de HTML directo sin saltos para evitar la franja gris
-        st.markdown(f'<div class="caja-resultados" style="margin-top: 15px;"><b>Desplazamiento nodal máximo (\(\delta_{{max}}\)):</b> {max_delta_mm:.2f} mm</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="caja-resultados" style="margin-top: 15px;"><b>Desplazamiento nodal máximo (&delta;<sub>max</sub>):</b> {max_delta_mm:.2f} mm</div>', unsafe_allow_html=True)
         
     with tab_reac:
         colR1, colR2 = st.columns(2)
