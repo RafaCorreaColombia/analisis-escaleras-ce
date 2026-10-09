@@ -314,7 +314,24 @@ else:
     # ---------------------------------------------------------
     st.markdown("---")
     st.subheader("🟦 Nivel 3: Verificaciones Básicas de Diseño")
-    st.write("Comprobación de la máxima demanda. *Asume acero fy = 420 MPa y recubrimiento al centroide de 4 cm.*")
+    
+    # Interfaz interactiva para recubrimiento y barra
+    col_info, col_rec, col_bar = st.columns([2, 1, 1])
+    with col_info:
+        st.write("Comprobación de la máxima demanda. Ajusta los parámetros para el cálculo exacto del peralte efectivo ($d$). *Se asume $f_y = 420$ MPa.*")
+    with col_rec:
+        recub_mm = st.number_input("Recub. libre (mm)", value=25.0, step=5.0)
+    with col_bar:
+        # Diámetros exactos de barras (Nomenclatura NSR-10)
+        diametros = {"N° 3": 9.53, "N° 4": 12.70, "N° 5": 15.88, "N° 6": 19.05, "N° 7": 22.23, "N° 8": 25.40}
+        barra = st.selectbox("Barra principal", list(diametros.keys()), index=1) # El index 1 deja N° 4 por defecto
+        db_mm = diametros[barra]
+
+    # Cálculo riguroso del peralte efectivo en metros (d = h - recub - db/2)
+    d_m = h - (recub_mm / 1000) - ((db_mm / 2) / 1000)
+    
+    # Etiqueta pedagógica para mostrar el cálculo en tiempo real
+    st.caption(f"📐 **Peralte efectivo calculado:** $d = h - rec - d_b/2 = {h*1000:.0f} - {recub_mm:.0f} - {db_mm/2:.2f} = {d_m*1000:.2f}$ mm")
     
     # Encontrar máximos absolutos
     Mu_max = max(np.max(np.abs(M1)), np.max(np.abs(M2)))
@@ -324,7 +341,6 @@ else:
     Nu_traccion = max([0.0, np.max(N1), np.max(N2)])
     
     # Parámetros de Diseño
-    d_m = h - 0.04 # Peralte efectivo en metros
     fy = 420 # MPa
     phi_f = 0.90
     phi_v = 0.75
