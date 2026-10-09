@@ -314,7 +314,7 @@ else:
     # ---------------------------------------------------------
     st.markdown("---")
     st.subheader("🟦 Nivel 3: Verificaciones Básicas de Diseño")
-    st.write("Comprobación de la máxima demanda. *Asume acero fy = 420 MPa y recubrimiento al centroide de 4 cm.*")
+    st.write("Comprobación de la máxima demanda. *Asume acero fy = 420 MPa y distancia al centroide de 4 cm.*")
     
     # Encontrar máximos absolutos
     Mu_max = max(np.max(np.abs(M1)), np.max(np.abs(M2)))
