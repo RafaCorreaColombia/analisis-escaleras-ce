@@ -37,8 +37,28 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+# INICIALIZAR MEMORIA DE LA APP (Para actualizaciones en tiempo real)
+if 'analizado' not in st.session_state:
+    st.session_state.analizado = False
+
 st.markdown('<h1 class="titulo-principal">Análisis Rápido de Escaleras</h1>', unsafe_allow_html=True)
 st.markdown("**Criterio Estructural** | Herramienta didáctica para idealizar, analizar y verificar rápidamente modelos de escaleras de un tramo.")
+
+# --- BANNER DE ADVERTENCIA ACADÉMICA ---
+st.markdown("""
+    <div style="background-color: #fff8e1; border-left: 6px solid #ffc107; padding: 15px 20px; border-radius: 8px; margin-top: 15px; margin-bottom: 25px; color: #1A2530; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+        <h5 style="margin-top: 0; color: #b48600; font-weight: bold;">🚧 Herramienta en Fase de Validación</h5>
+        <p style="margin-bottom: 0; font-size: 0.95em;">
+            Esta aplicación es un recurso <b>estrictamente académico</b> y se encuentra en etapa de desarrollo continuo. 
+            El usuario asume la responsabilidad total de <b>revisar, calcular de forma manual y validar independientemente</b> 
+            cada dato de análisis y diseño estructural arrojado. No debe emplearse para proyectos reales sin una rigurosa comprobación profesional.
+        </p>
+    </div>
+""", unsafe_allow_html=True)
+
+# ==========================================
+# BARRA LATERAL: ENTRADA DE DATOS
+# ==========================================
 
 # ==========================================
 # BARRA LATERAL: ENTRADA DE DATOS
@@ -142,7 +162,9 @@ with st.sidebar:
     st.success(f"**Wu1 = {Wu1:.2f} kN/m | Wu2 = {Wu2:.2f} kN/m**")
 
     st.markdown("---")
-    btn_analizar = st.button("▶ ANALIZAR")
+    # Botón enlazado a la memoria
+    if st.button("▶ ANALIZAR"):
+        st.session_state.analizado = True
     
     # ENLACES INSTITUCIONALES EN EL SIDEBAR
     st.markdown("---")
@@ -158,7 +180,7 @@ with st.sidebar:
 # ==========================================
 # ÁREA PRINCIPAL
 # ==========================================
-if not btn_analizar:
+if not st.session_state.analizado:
     st.info("👈 Define la geometría, sección y cargas en el panel izquierdo. Luego haz clic en 'Analizar'.")
     
     # Dibujar geometría vacía previa con los apoyos seleccionados
@@ -266,7 +288,6 @@ else:
 
     with tab_def:
         # Calcular componentes y resultantes nodales para cada nodo (i = 0, 3, 6)
-        # GDL: Nodo 0 -> [0:ux, 1:uy, 2:rz], Nodo 1 -> [3:ux, 4:uy, 5:rz], Nodo 2 -> [6:ux, 7:uy, 8:rz]
         desplazamientos_detalle = []
         for idx, nodo_num in enumerate([1, 2, 3]):
             i = idx * 3
@@ -282,7 +303,7 @@ else:
         fig_def = vi.graficar_deformada(nodos, elementos, Desp)
         st.plotly_chart(fig_def, use_container_width=True)
         
-        # Caja de resultados detallada con HTML puro (sin LaTeX conflictivo)
+        # Caja de resultados detallada con HTML puro
         html_desp = f"""
         <div class="caja-resultados" style="margin-top: 15px;">
             <b>Desplazamiento Nodal Máximo (Nodo Crítico N{nodo_critico}):</b><br>
@@ -314,28 +335,43 @@ else:
     # ---------------------------------------------------------
     st.markdown("---")
     st.subheader("🟦 Nivel 3: Verificaciones Básicas de Diseño")
-    st.write("Comprobación de la máxima demanda. *Asume acero fy = 420 MPa y distancia al centroide de 4 cm.*")
     
-    # Encontrar máximos absolutos
-    Mu_max = max(np.max(np.abs(M1)), np.max(np.abs(M2)))
-    Vu_max = max(np.max(np.abs(V1)), np.max(np.abs(V2)))
+    # INTERFAZ INTERACTIVA (QUIRÚRGICA)
+    col_info, col_tipo, col_rec, col_bar = st.columns([1.5, 1, 1, 1])
+    with col_info:
+        st.write("Ajusta los parámetros para calcular el peralte efectivo ($d$) y el acero mínimo en tiempo real. *Asume $f_y = 420$ MPa.*")
+    with col_tipo:
+        tipo_elem = st.selectbox("Tipo de elemento", ["Losa", "Viga"], index=0)
+    with col_rec:
+        recub_mm = st.number_input("Recub. libre (mm)", value=25.0, step=5.0)
+    with col_bar:
+        diametros = {"N° 3": 9.53, "N° 4": 12.70, "N° 5": 15.88, "N° 6": 19.05, "N° 7": 22.23, "N° 8": 25.40}
+        barra = st.selectbox("Barra principal", list(diametros.keys()), index=1)
+        db_mm = diametros[barra]
+
+    # Cálculo riguroso de d
+    d_m = h - (recub_mm / 1000) - ((db_mm / 2) / 1000)
+    st.caption(f"📐 **Peralte efectivo calculado:** $d = h - r_c - d_b/2 = {h*1000:.0f} - {recub_mm:.0f} - {db_mm/2:.2f} = {d_m*1000:.2f}$ mm")
     
-    # Evaluar la tracción máxima
-    Nu_traccion = max([0.0, np.max(N1), np.max(N2)])
-    
-    # Parámetros de Diseño
-    d_m = h - 0.04 # Peralte efectivo en metros
+    # Parámetros de Diseño Constantes
     fy = 420 # MPa
     phi_f = 0.90
     phi_v = 0.75
     
-    # Cortante del Concreto (NSR-10)
-    Vc1 = 0.17 * np.sqrt(fc) * b * d_m * 1000 # en kN 
-    Vc2 = 0.17 * np.sqrt(fc) * b * d_m * 1000 * (1 + (0.29 * (-Nu_traccion) / (b * h * 1000)))
-    Vc2 = max(0.0, Vc2)
-    phi_Vc = phi_v * min(Vc1, Vc2)
+    # -------------------------
+    # 1. DISEÑO A FLEXIÓN
+    # -------------------------
+    Mu_max = max(np.max(np.abs(M1)), np.max(np.abs(M2)))
     
-    # Acero de Flexión (Ecuación Cuadrática Exacta de rho)
+    # Acero Mínimo según elemento (NSR-10)
+    if tipo_elem == "Losa":
+        As_min_cm2 = 0.0018 * b * h * 10000
+    else: # Viga
+        As_min_1 = (0.25 * np.sqrt(fc) * b * d_m) / (fy) * 10000
+        As_min_2 = (1.4 * b * d_m) / (fy) * 10000
+        As_min_cm2 = max(As_min_1, As_min_2)
+    
+    # Acero de Flexión Requerido (Ecuación Cuadrática Exacta de rho)
     coef_A = 0.588235 * fy / fc
     coef_B = -1.0
     coef_C = (Mu_max) / (phi_f * b * d_m**2 * fy * 1000) 
@@ -349,37 +385,77 @@ else:
         As_req_cm2 = rho_req * b * d_m * 10000 
         texto_As = f"{As_req_cm2:.2f} cm²"
         
-    As_min_cm2 = 0.0018 * b * h * 10000
+    st.markdown("#### 📏 Diseño a Flexión")
+    html_flexion = f"""
+    <div class="caja-resultados">
+        <p><b>Demanda Crítica |M<sub>u</sub>|:</b> <span class="highlight">{Mu_max:.2f} kN·m</span></p>
+        <p><b>A<sub>s</sub> requerido:</b> {texto_As}</p>
+        <p><b>A<sub>s</sub> mínimo (NSR-10 - {tipo_elem}):</b> {As_min_cm2:.2f} cm²</p>
+    </div>
+    """
+    st.markdown(html_flexion, unsafe_allow_html=True)
     
-    # RENDERIZADO DE DISEÑO (F-STRINGS PARA EVITAR FRANJAS GRISES)
-    col_flex, col_cort = st.columns(2)
+    # -------------------------
+    # 2. VERIFICACIÓN A CORTANTE (TABLA DE 4 ESTACIONES)
+    # -------------------------
+    st.markdown("#### ✂️ Verificación a Cortante (Estaciones Críticas)")
     
-    with col_flex:
-        html_flexion = f"""
-        <div class="caja-resultados">
-            <h4>📏 Diseño a Flexión</h4>
-            <p><b>Demanda Crítica |M<sub>u</sub>|:</b> <span class="highlight">{Mu_max:.2f} kN·m</span></p>
-            <p><b>A<sub>s</sub> requerido:</b> {texto_As}</p>
-            <p><b>A<sub>s</sub> mínimo (NSR-10):</b> {As_min_cm2:.2f} cm²</p>
-        </div>
-        """
-        st.markdown(html_flexion, unsafe_allow_html=True)
+    # Recolectar datos en los extremos de los elementos (índices 0 y -1 de los arreglos)
+    estaciones_criticas = [
+        ("Tramo 1 · Extremo Inicial (i)", abs(V1[0]), N1[0]),
+        ("Tramo 1 · Extremo Final (j)", abs(V1[-1]), N1[-1]),
+        ("Tramo 2 · Extremo Inicial (i)", abs(V2[0]), N2[0]),
+        ("Tramo 2 · Extremo Final (j)", abs(V2[-1]), N2[-1])
+    ]
+    
+    filas_html = ""
+    for nombre, vu_est, nu_est in estaciones_criticas:
+        vc_base = 0.17 * np.sqrt(fc) * b * d_m * 1000 # C.11-3 en kN
         
-    with col_cort:
-        if Vu_max <= phi_Vc:
-            texto_chequeo = "✅ <b>Chequeo:</b> V<sub>u</sub> ≤ φV<sub>c</sub> (No requiere refuerzo transversal)"
+        # Si hay tracción (Nu positivo según diagrama), se reduce la capacidad
+        if nu_est > 0:
+            vc_tracc = vc_base * (1 + (0.29 * (-nu_est) / (b * h * 1000)))
+            vc_calc = max(0.0, vc_tracc)
+            ecuacion = "C.11-8 (Tracción)"
         else:
-            texto_chequeo = "❌ <b style='color:red;'>Chequeo:</b> V<sub>u</sub> > φV<sub>c</sub> (Requiere aumentar espesor o colocar estribos)"
-
-        html_cortante = f"""
-        <div class="caja-resultados">
-            <h4>✂️ Diseño a Cortante</h4>
-            <p><b>Demanda |V<sub>u</sub>|:</b> {Vu_max:.2f} kN &nbsp;|&nbsp; <b>Tracción |N<sub>u</sub>|:</b> {Nu_traccion:.2f} kN</p>
-            <p><b>Capacidad φV<sub>c</sub>:</b> <span class="highlight">{phi_Vc:.2f} kN</span> <span style="font-size:0.85em; color:#666;">(mínimo entre EQ C.11-3 y C.11-8)</span></p>
-            <p>{texto_chequeo}</p>
-        </div>
+            # Si hay compresión, conservadoramente usamos la ecuación base
+            vc_calc = vc_base
+            ecuacion = "C.11-3 (Base)"
+            
+        phi_vc_est = phi_v * vc_calc
+        
+        # Evaluación
+        cumple = "✅ Cumple" if vu_est <= phi_vc_est else "❌ No cumple"
+        color = "green" if vu_est <= phi_vc_est else "red"
+        
+        filas_html += f"""
+        <tr>
+            <td>{nombre}</td>
+            <td>{vu_est:.2f}</td>
+            <td>{nu_est:.2f}</td>
+            <td>{ecuacion}</td>
+            <td>{phi_vc_est:.2f}</td>
+            <td style="color:{color}; font-weight:bold;">{cumple}</td>
+        </tr>
         """
-        st.markdown(html_cortante, unsafe_allow_html=True)
+        
+    html_cortante = f"""
+    <div class="caja-resultados" style="padding: 0; overflow:hidden;">
+        <table class="w3-table w3-bordered w3-hoverable w3-white w3-small" style="width: 100%;">
+            <tr style="background-color: var(--azul-profundo); color: white;">
+                <th>Estación</th>
+                <th>|V<sub>u</sub>| (kN)</th>
+                <th>N<sub>u</sub> (kN)</th>
+                <th>Ecuación (NSR-10)</th>
+                <th>φV<sub>c</sub> (kN)</th>
+                <th>Resultado</th>
+            </tr>
+            {filas_html}
+        </table>
+    </div>
+    """
+    st.markdown(html_cortante, unsafe_allow_html=True)
+    st.caption("*Nota: La verificación asume tracción positiva ($+N_u$) reduciendo la capacidad del concreto según C.11-8. La compresión ($-N_u$) no se toma a favor conservadoramente, empleando la ecuación base C.11-3.*")
 
     # ==========================================
     # CAJA NEGRA (REFERENCIA TÉCNICA)
