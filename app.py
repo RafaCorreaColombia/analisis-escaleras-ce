@@ -416,7 +416,7 @@ else:
         if nu_est > 0:
             vc_tracc = vc_base * (1 + (0.29 * (-nu_est) / (b * h * 1000)))
             vc_calc = max(0.0, vc_tracc)
-            ecuacion = "C.11-8 (Tracción)"
+            ecuacion = "C.11-8 (Tracc)"
         else:
             # Si hay compresión, conservadoramente usamos la ecuación base
             vc_calc = vc_base
@@ -428,27 +428,14 @@ else:
         cumple = "✅ Cumple" if vu_est <= phi_vc_est else "❌ No cumple"
         color = "green" if vu_est <= phi_vc_est else "red"
         
-        filas_html += f"""
-        <tr>
-            <td>{nombre}</td>
-            <td>{vu_est:.2f}</td>
-            <td>{nu_est:.2f}</td>
-            <td>{ecuacion}</td>
-            <td>{phi_vc_est:.2f}</td>
-            <td style="color:{color}; font-weight:bold;">{cumple}</td>
-        </tr>
-        """
+        # AQUÍ ESTÁ EL FIX: Todo en una sola línea compacta para que Markdown no se confunda
+        filas_html += f"<tr><td>{nombre}</td><td>{vu_est:.2f}</td><td>{nu_est:.2f}</td><td>{ecuacion}</td><td>{phi_vc_est:.2f}</td><td style='color:{color}; font-weight:bold;'>{cumple}</td></tr>"
         
     html_cortante = f"""
     <div class="caja-resultados" style="padding: 0; overflow:hidden;">
         <table class="w3-table w3-bordered w3-hoverable w3-white w3-small" style="width: 100%;">
             <tr style="background-color: var(--azul-profundo); color: white;">
-                <th>Estación</th>
-                <th>|V<sub>u</sub>| (kN)</th>
-                <th>N<sub>u</sub> (kN)</th>
-                <th>Ecuación (NSR-10)</th>
-                <th>φV<sub>c</sub> (kN)</th>
-                <th>Resultado</th>
+                <th>Estación</th><th>|V<sub>u</sub>| (kN)</th><th>N<sub>u</sub> (kN)</th><th>Ecuación (NSR-10)</th><th>φV<sub>c</sub> (kN)</th><th>Resultado</th>
             </tr>
             {filas_html}
         </table>
@@ -456,7 +443,7 @@ else:
     """
     st.markdown(html_cortante, unsafe_allow_html=True)
     st.caption("*Nota: La verificación asume tracción positiva ($+N_u$) reduciendo la capacidad del concreto según C.11-8. La compresión ($-N_u$) no se toma a favor conservadoramente, empleando la ecuación base C.11-3.*")
-
+    
     # ==========================================
     # CAJA NEGRA (REFERENCIA TÉCNICA)
     # ==========================================
